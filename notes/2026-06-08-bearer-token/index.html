@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bearerトークンの意味、仕組み、JWTとの違い、安全な扱い方を解説">
+  <title>Bearerトークンって何？ | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Security · 2026-06-08</p>
+    <h1>Bearerトークンって何？</h1>
+    <p class="lead">APIを呼ぶときによく見る <code>Authorization: Bearer ...</code>。Bearerはトークンの中身ではなく、「持っている人に利用を許可する」という使い方を表します。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>Bearerトークンは、提示した人が追加の証明なしで権限を使えるセキュリティトークンです。入場券や現金に近く、本人かどうかよりも「有効なものを持っているか」で判断します。そのため、盗まれると攻撃者にも使われます。</p>
+    </div>
+
+    <h2>Bearerの意味</h2>
+    <p><em>bearer</em> は「持参人」「所持人」という意味です。RFC 6750では、Bearerトークンを持つ任意の主体が、同じトークンを持つ他の主体と同様に利用できるものと定義しています。</p>
+
+    <div class="diagram" aria-label="Bearerトークンを利用する流れ">
+      <div>認可サーバーが<br>トークンを発行</div>
+      <div>クライアントが<br>APIへ提示</div>
+      <div>APIが検証し<br>アクセスを許可</div>
+    </div>
+
+    <p>APIは通常、リクエストを送った人の顔や端末そのものを確認するのではなく、提示されたトークンが有効か、期限内か、必要な権限を持つかを確認します。</p>
+
+    <h2>HTTPではどう送る？</h2>
+    <p>推奨される方法は、HTTPS通信の <code>Authorization</code> ヘッダーへ入れることです。</p>
+
+    <pre><code>GET /api/profile HTTP/1.1
+Host: example.com
+Authorization: Bearer eyJhbGciOi...</code></pre>
+
+    <p><code>Bearer</code> は認証方式を表す名前で、その後ろの文字列が実際のトークンです。URLのクエリパラメーターに入れると、ブラウザ履歴やサーバーログなどへ残る可能性があるため避けます。</p>
+
+    <h2>身近な例で考える</h2>
+    <table>
+      <thead><tr><th>例</th><th>確認されるもの</th><th>盗まれた場合</th></tr></thead>
+      <tbody>
+        <tr><td>記名式の会員証</td><td>会員証と本人の一致</td><td>本人確認で止められる可能性がある</td></tr>
+        <tr><td>無記名の入場券</td><td>有効な券を持っているか</td><td>拾った人でも入場できる</td></tr>
+        <tr><td>Bearerトークン</td><td>有効なトークンを提示したか</td><td>盗んだ人でもAPIを呼べる</td></tr>
+      </tbody>
+    </table>
+
+    <h2>BearerトークンとJWTは同じ？</h2>
+    <p><strong>同じではありません。</strong> Bearerは「どう使うか」、JWTは「データをどう表現するか」です。</p>
+
+    <table>
+      <thead><tr><th>用語</th><th>表すもの</th></tr></thead>
+      <tbody>
+        <tr><td>Bearerトークン</td><td>所持している人に利用を許可する方式</td></tr>
+        <tr><td>JWT</td><td>署名可能なJSONベースのトークン形式</td></tr>
+        <tr><td>アクセストークン</td><td>保護されたリソースへアクセスするための権限を表すもの</td></tr>
+      </tbody>
+    </table>
+
+    <p>JWT形式のアクセストークンをBearer方式で使うことはよくあります。一方で、中身を読めないランダム文字列のBearerトークンもあります。また、JWTだから自動的にBearer方式になるわけでもありません。</p>
+
+    <h2>なぜ危険なの？</h2>
+    <p>Bearerトークンは、利用者に秘密鍵などの追加証明を求めません。漏えいしたトークンを攻撃者がそのまま再送する「リプレイ」が可能です。</p>
+
+    <div class="diagram" aria-label="盗まれたBearerトークンが悪用される流れ">
+      <div>正規利用者から<br>トークンが漏れる</div>
+      <div>攻撃者が同じ<br>トークンを提示</div>
+      <div>期限・権限の範囲で<br>APIを悪用</div>
+    </div>
+
+    <h2>安全に扱う基本</h2>
+    <ul>
+      <li>必ずHTTPSで送る。</li>
+      <li>URLへ入れず、原則として <code>Authorization</code> ヘッダーで送る。</li>
+      <li>ログ、エラー画面、チャット、Gitリポジトリへ記録しない。</li>
+      <li>有効期限を短くし、必要最小限の権限と利用先に限定する。</li>
+      <li>漏えい時に失効できる設計にする。</li>
+      <li>ブラウザへ保存する場合は、XSSなどによる窃取リスクを考慮する。</li>
+    </ul>
+
+    <div class="callout">
+      <strong>覚え方</strong>
+      <p>Bearerトークンは「持っていること自体が権限の証明」。だから、パスワードと同じように秘密として扱います。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://www.rfc-editor.org/rfc/rfc6750">RFC 6750: The OAuth 2.0 Authorization Framework: Bearer Token Usage</a> — IETF / RFC Editor、確認日: 2026-06-08</li>
+      <li><a href="https://www.rfc-editor.org/rfc/rfc6749">RFC 6749: The OAuth 2.0 Authorization Framework</a> — IETF / RFC Editor、確認日: 2026-06-08</li>
+    </ul>
+  </main>
+</body>
+</html>

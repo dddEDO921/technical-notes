@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Codex Appで技術ノートを育てる最小ワークフロー">
+  <title>Codex Appで技術ノートを育てる | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Workflow · 2026-06-08</p>
+    <h1>Codex Appで技術ノートを育てる</h1>
+    <p class="lead">Obsidianへのコピペや端末ごとの拡張機能を介さず、疑問を投げるだけで読みやすいHTMLへ育てるための最小構成。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>Codex Appで技術ノート専用リポジトリを開き、質問を投げます。Codexが一次情報を調べてHTMLと一覧を更新し、人間が差分を確認してからpushします。</p>
+    </div>
+
+    <h2>全体像</h2>
+    <div class="diagram" aria-label="質問から公開までの流れ">
+      <div>1. 質問を投げる</div>
+      <div>2. Codexが調査・HTML化</div>
+      <div>3. 確認後に公開</div>
+    </div>
+
+    <h2>なぜ負担が減るのか</h2>
+    <table>
+      <thead><tr><th>従来の負担</th><th>この運用</th></tr></thead>
+      <tbody>
+        <tr><td>調査結果をObsidianへコピペ</td><td>質問したリポジトリへ直接HTMLを追加</td></tr>
+        <tr><td>端末ごとに拡張機能を整備</td><td>ブラウザで読める静的HTML</td></tr>
+        <tr><td>見た目を後から整える</td><td>共通CSSと記事テンプレートを再利用</td></tr>
+      </tbody>
+    </table>
+
+    <h2>日々の使い方</h2>
+    <p>Codex Appでこのリポジトリを開き、次のように送ります。</p>
+    <pre><code>質問: OAuthのPKCEは何を防ぐの？図解と具体例つきで知りたい</code></pre>
+    <p><code>AGENTS.md</code> と <code>write-technical-note</code> スキルにより、ノートの保存場所、構成、参照元、安全ルールが毎回引き継がれます。</p>
+
+    <h2>公開前に見るポイント</h2>
+    <ul>
+      <li>結論と参照元が一致しているか</li>
+      <li>秘密情報や個人情報が含まれていないか</li>
+      <li>リンク切れや表示崩れがないか</li>
+      <li>断定できない内容が断定表現になっていないか</li>
+    </ul>
+
+    <h2>次に追加すると便利なもの</h2>
+    <ul>
+      <li>カテゴリを自分の関心領域に合わせて増やす</li>
+      <li>よく使う図解パターンをCSSへ追加する</li>
+      <li>GitHub Pagesまたはプライベートなホスティングへ接続する</li>
+    </ul>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://zenn.dev/ttaniguchi/articles/instant-question-html-notes">移動中でも就寝前でも、Codexと育てる「技術ノート」</a> — Zenn、確認日: 2026-06-08</li>
+      <li><a href="https://docs.github.com/pages">GitHub Pages documentation</a> — GitHub Docs、確認日: 2026-06-08</li>
+    </ul>
+  </main>
+</body>
+</html>
