@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OAuth 2.0の目的、役割、Authorization Code + PKCE、トークン、OpenID Connectとの違い、安全な実装を解説">
+  <title>OAuth 2.0を詳しく理解する | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Security · 2026-06-10</p>
+    <h1>OAuth 2.0を詳しく理解する</h1>
+    <p class="lead">OAuth 2.0は、パスワードを第三者アプリへ渡さず、限られた権限だけを委譲するための認可フレームワークです。現在の基本形はAuthorization Code + PKCEです。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>OAuth 2.0は「あるサービスが持つデータや機能を、別のアプリに、範囲と期限を限定して使わせる」仕組みです。ユーザーのパスワードの代わりにアクセストークンを渡すため、アプリごとに権限を制限・失効できます。</p>
+    </div>
+
+    <h2>OAuth 2.0が解決する問題</h2>
+    <p>たとえば写真印刷アプリに、写真サービス内の画像を読み取らせたいとします。OAuthがなければ、写真サービスのIDとパスワードを印刷アプリへ渡す設計になりかねません。</p>
+
+    <table>
+      <thead><tr><th>パスワードを共有する方式</th><th>OAuth 2.0</th></tr></thead>
+      <tbody>
+        <tr><td>第三者アプリがパスワードを保持する</td><td>第三者アプリにはアクセストークンを渡す</td></tr>
+        <tr><td>アカウントの全権限を渡しやすい</td><td>許可する操作をscopeなどで絞れる</td></tr>
+        <tr><td>個別アプリだけを止めにくい</td><td>アプリ単位で権限を失効できる</td></tr>
+        <tr><td>パスワード変更まで長期間使われる</td><td>トークンに短い有効期限を設定できる</td></tr>
+      </tbody>
+    </table>
+
+    <h2>重要: OAuthは認証ではなく認可</h2>
+    <p><strong>認証</strong>は「あなたは誰か」を確認すること、<strong>認可</strong>は「何をしてよいか」を決めることです。OAuth 2.0の中心は認可です。</p>
+
+    <table>
+      <thead><tr><th>目的</th><th>代表例</th><th>答える問い</th></tr></thead>
+      <tbody>
+        <tr><td>認証</td><td>OpenID Connect、パスキー</td><td>この利用者は誰か？</td></tr>
+        <tr><td>認可</td><td>OAuth 2.0</td><td>このアプリに何を許可するか？</td></tr>
+      </tbody>
+    </table>
+
+    <p>「Googleでログイン」などにはOAuth 2.0を土台にしたOpenID Connect（OIDC）がよく使われます。アクセストークンだけを見てユーザー認証を実装するのではなく、ログイン目的ではOIDCのID TokenやUserInfo Endpointなどを仕様どおり利用します。</p>
+
+    <h2>4つの登場人物</h2>
+    <div class="diagram" aria-label="OAuth 2.0の4つの役割">
+      <div>Resource Owner<br><small>権限を持つユーザー</small></div>
+      <div>Client<br><small>権限を使いたいアプリ</small></div>
+      <div>Authorization Server<br><small>許可を確認しトークンを発行</small></div>
+    </div>
+
+    <p>もう1つが、アクセストークンを受け取ってAPIを提供する<strong>Resource Server</strong>です。同じ事業者がAuthorization ServerとResource Serverを運営する場合もあります。</p>
+
+    <table>
+      <thead><tr><th>役割</th><th>写真印刷アプリの例</th></tr></thead>
+      <tbody>
+        <tr><td>Resource Owner</td><td>写真の所有者であるユーザー</td></tr>
+        <tr><td>Client</td><td>写真印刷アプリ</td></tr>
+        <tr><td>Authorization Server</td><td>ログインと許可画面を提供し、トークンを発行するサーバー</td></tr>
+        <tr><td>Resource Server</td><td>写真APIを提供するサーバー</td></tr>
+      </tbody>
+    </table>
+
+    <h2>現在の基本: Authorization Code + PKCE</h2>
+    <p>ユーザーが関与するWeb・SPA・モバイルアプリでは、Authorization Code FlowにPKCEを組み合わせるのが基本です。PKCEは、認可コードを盗んだ攻撃者がアクセストークンへ交換することを防ぎます。</p>
+
+    <div class="diagram" aria-label="Authorization Code + PKCEの前半">
+      <div>1. Clientが秘密値を作り<br>ハッシュ値を送る</div>
+      <div>2. ユーザーが<br>ログイン・許可</div>
+      <div>3. Clientへ短寿命の<br>認可コードを返す</div>
+    </div>
+    <div class="diagram" aria-label="Authorization Code + PKCEの後半">
+      <div>4. Clientが認可コードと<br>元の秘密値を送る</div>
+      <div>5. Authorization Serverが<br>組み合わせを検証</div>
+      <div>6. アクセストークンで<br>Resource Serverを呼ぶ</div>
+    </div>
+
+    <h3>1. ClientがPKCE用の値を準備</h3>
+    <p>Clientは推測困難な <code>code_verifier</code> を生成し、そのSHA-256ハッシュから <code>code_challenge</code> を作ります。認可リクエストには <code>code_challenge</code> のみを含めます。</p>
+
+    <pre><code>GET /authorize?
+  response_type=code
+  &client_id=photo-printer
+  &redirect_uri=https%3A%2F%2Fclient.example%2Fcallback
+  &scope=photos.read
+  &state=random-csrf-value
+  &code_challenge=hashed-verifier
+  &code_challenge_method=S256</code></pre>
+
+    <h3>2. ユーザーが許可する</h3>
+    <p>ブラウザはAuthorization Serverへ移動します。ユーザーはClientではなくAuthorization Server上でログインし、「写真の読み取りを許可しますか？」などの画面を確認します。</p>
+
+    <h3>3. 認可コードを受け取る</h3>
+    <p>許可後、Authorization Serverは事前登録されたリダイレクトURIへ短寿命・一度限りの認可コードを返します。</p>
+
+    <pre><code>HTTP/1.1 302 Found
+Location: https://client.example/callback?
+  code=short-lived-authorization-code
+  &state=random-csrf-value</code></pre>
+
+    <h3>4. 認可コードをトークンへ交換</h3>
+    <p>Clientは認可コードと元の <code>code_verifier</code> をToken Endpointへ送ります。Authorization Serverはハッシュ値との対応を確認し、正しいClientだけにトークンを発行します。</p>
+
+    <pre><code>POST /token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=short-lived-authorization-code
+&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback
+&client_id=photo-printer
+&code_verifier=original-random-verifier</code></pre>
+
+    <h3>5. APIを呼ぶ</h3>
+    <p>ClientはアクセストークンをResource Serverへ提示します。Bearerトークンの場合は通常、HTTPSのAuthorizationヘッダーで送ります。</p>
+
+    <pre><code>GET /photos
+Authorization: Bearer access-token-value</code></pre>
+
+    <h2>OAuthで扱う主な値</h2>
+    <table>
+      <thead><tr><th>値</th><th>役割</th><th>注意点</th></tr></thead>
+      <tbody>
+        <tr><td><code>client_id</code></td><td>Clientを識別する公開ID</td><td>秘密情報ではない</td></tr>
+        <tr><td><code>client_secret</code></td><td>秘密を保持できるClientの認証情報</td><td>SPAやモバイルアプリ内では秘密にできない</td></tr>
+        <tr><td><code>redirect_uri</code></td><td>認可結果を返す宛先</td><td>事前登録し、厳密に一致確認する</td></tr>
+        <tr><td><code>scope</code></td><td>要求・許可する権限範囲</td><td>必要最小限にする</td></tr>
+        <tr><td><code>state</code></td><td>リクエストと応答を結び付ける値</td><td>CSRF対策などに使い、セッションへ安全に結び付ける</td></tr>
+        <tr><td>認可コード</td><td>トークン交換用の一時的な値</td><td>短寿命・一度限り</td></tr>
+        <tr><td>アクセストークン</td><td>APIへアクセスする権限</td><td>漏えい時の影響を抑えるため短寿命・最小権限にする</td></tr>
+        <tr><td>リフレッシュトークン</td><td>新しいアクセストークンを取得する</td><td>長期的な権限になり得るため厳重に保護する</td></tr>
+      </tbody>
+    </table>
+
+    <h2>アクセストークンはJWTなの？</h2>
+    <p>OAuth 2.0自体は、アクセストークンの形式を決めていません。JWTの場合も、意味を読み取れないランダム文字列（opaque token）の場合もあります。</p>
+
+    <table>
+      <thead><tr><th>形式</th><th>Resource Serverでの検証例</th><th>特徴</th></tr></thead>
+      <tbody>
+        <tr><td>JWT</td><td>署名、有効期限、発行者、audienceなどを検証</td><td>サーバー単独で検証しやすいが、失効や情報露出に注意</td></tr>
+        <tr><td>Opaque token</td><td>Authorization Serverへ問い合わせる、または共有ストレージを参照</td><td>中身を外部へ見せず、中央で状態管理しやすい</td></tr>
+      </tbody>
+    </table>
+
+    <p>Clientはアクセストークンの中身に依存せず、APIへ渡す値として扱うのが基本です。</p>
+
+    <h2>どのgrant typeを使う？</h2>
+    <table>
+      <thead><tr><th>用途</th><th>選択肢</th><th>現在の位置づけ</th></tr></thead>
+      <tbody>
+        <tr><td>ユーザーの権限でAPIを使う</td><td>Authorization Code + PKCE</td><td>基本の選択肢</td></tr>
+        <tr><td>サーバー同士で自身の権限を使う</td><td>Client Credentials</td><td>ユーザーを介さない処理向け</td></tr>
+        <tr><td>入力しにくいTV・端末</td><td>Device Authorization Grant</td><td>別端末のブラウザで許可する拡張仕様</td></tr>
+        <tr><td>Implicit Grant</td><td>ブラウザへ直接アクセストークンを返す</td><td>漏えいリスクのため使わないことを推奨</td></tr>
+        <tr><td>Resource Owner Password Credentials</td><td>ClientがユーザーのID・パスワードを受け取る</td><td>現在のセキュリティBCPでは使用禁止</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Clientの種類と秘密の扱い</h2>
+    <p>OAuth 2.0では、Clientが認証情報を安全に保持できるかが重要です。</p>
+    <ul>
+      <li><strong>Confidential Client:</strong> バックエンドサーバーなど、秘密を保持できるClient。</li>
+      <li><strong>Public Client:</strong> SPA、モバイル、デスクトップアプリなど、配布物から秘密を取り出せるClient。</li>
+    </ul>
+    <p>Public Clientへ埋め込んだ <code>client_secret</code> は秘密ではありません。PKCEはそのようなClientでも認可コードの横取りを防ぐために設計され、現在の推奨ではWebアプリを含むすべての種類のClientへ適用されます。</p>
+
+    <h2>現在のセキュリティ基本方針</h2>
+    <p>RFC 6749は2012年公開ですが、脅威と推奨事項は2025年公開のRFC 9700で更新されています。2026-06-10時点で、実装時には両方を参照する必要があります。</p>
+
+    <ul>
+      <li>Authorization Code + PKCEを利用し、PKCEは <code>S256</code> を使う。</li>
+      <li>Implicit Grantは避け、アクセストークンを認可レスポンスやURLへ露出させない。</li>
+      <li>Resource Owner Password Credentials Grantは使用しない。</li>
+      <li>リダイレクトURIを事前登録し、完全一致で検証する。</li>
+      <li>Authorization Server、Client、Resource Server間をHTTPSで通信する。</li>
+      <li>アクセストークンのscope、対象Resource Server、有効期限を最小化する。</li>
+      <li>Public Clientのリフレッシュトークンは、送信者制約またはローテーションでリプレイを検知する。</li>
+      <li>トークン、認可コード、Clientの秘密情報をログやURLへ残さない。</li>
+      <li>実績のあるOAuth/OIDCライブラリを利用し、独自実装を避ける。</li>
+    </ul>
+
+    <h2>よくある誤解</h2>
+    <table>
+      <thead><tr><th>誤解</th><th>実際</th></tr></thead>
+      <tbody>
+        <tr><td>OAuthはログイン方式である</td><td>OAuthは認可の枠組み。ログインには通常OIDCを組み合わせる</td></tr>
+        <tr><td>アクセストークンは必ずJWTである</td><td>形式はOAuth仕様で決められていない</td></tr>
+        <tr><td>JWTなら安全である</td><td>署名検証、issuer、audience、期限などの検証と安全な保管が必要</td></tr>
+        <tr><td>SPAへclient_secretを埋め込めば安全になる</td><td>配布されたコードから取得できるため秘密として扱えない</td></tr>
+        <tr><td>長いscopeを要求しておけば便利</td><td>漏えい時の被害が増えるため必要最小限にする</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>設計時の判断軸</strong>
+      <p>「誰の権限で」「どのClientが」「どのResource Serverの」「どの操作を」「いつまで許可されるか」を分けて考えると、OAuth 2.0の設計が整理しやすくなります。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://www.rfc-editor.org/rfc/rfc6749">RFC 6749: The OAuth 2.0 Authorization Framework</a> — IETF / RFC Editor、確認日: 2026-06-10</li>
+      <li><a href="https://www.rfc-editor.org/rfc/rfc9700">RFC 9700: Best Current Practice for OAuth 2.0 Security</a> — IETF / RFC Editor、確認日: 2026-06-10</li>
+      <li><a href="https://www.rfc-editor.org/rfc/rfc7636">RFC 7636: Proof Key for Code Exchange by OAuth Public Clients</a> — IETF / RFC Editor、確認日: 2026-06-10</li>
+      <li><a href="https://www.rfc-editor.org/rfc/rfc8252">RFC 8252: OAuth 2.0 for Native Apps</a> — IETF / RFC Editor、確認日: 2026-06-10</li>
+      <li><a href="https://www.rfc-editor.org/rfc/rfc8628">RFC 8628: OAuth 2.0 Device Authorization Grant</a> — IETF / RFC Editor、確認日: 2026-06-10</li>
+      <li><a href="https://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect Core 1.0</a> — OpenID Foundation、確認日: 2026-06-10</li>
+    </ul>
+  </main>
+</body>
+</html>
