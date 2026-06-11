@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Modern Web Guidanceの目的、対象分野、仕組み、導入方法、活用時の注意点を解説">
+  <title>Modern Web Guidanceとは？ | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">AI Development · 2026-06-11</p>
+    <h1>Modern Web Guidanceとは？</h1>
+    <p class="lead">AIコーディングエージェントが古いCSS・JavaScriptを生成しがちな問題を、現在のWeb標準、ブラウザ対応状況、実務的なガイドによって改善するGoogle公式スキル。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>Modern Web Guidanceは、CodexなどのAIエージェントへモダンなWeb開発知識を必要なときだけ渡すスキルです。新しい機能を無条件に使わせるのではなく、Baselineによるブラウザ対応状況やフォールバックも考慮して提案させます。</p>
+    </div>
+
+    <h2>元記事が伝えていること</h2>
+    <p>AIへフロントエンド実装を頼むと、現在はブラウザ標準機能だけで簡潔に実装できる場面でも、古いパターンや大量のJavaScriptを選ぶことがあります。Modern Web Guidanceは、その問題を解決するためにWebプラットフォームの専門知識をAIのコンテキストへ注入します。</p>
+
+    <div class="diagram" aria-label="Modern Web Guidanceが解決する流れ">
+      <div>AIは学習データ中の<br>古い実装も選びやすい</div>
+      <div>関連する最新ガイドを<br>必要なときだけ取得</div>
+      <div>対応状況を考慮した<br>実装・改善案を提示</div>
+    </div>
+
+    <h2>なぜAIは古いコードを書くのか</h2>
+    <p>LLMの学習データには、長年蓄積されたレガシーコードが大量に含まれます。モデルが新しいAPIの存在を知っていても、実運用で正しく使うための実装パターンが不足し、古い多数派の書き方へ戻ることがあります。</p>
+
+    <table>
+      <thead><tr><th>やりたいこと</th><th>古い実装例</th><th>モダンな選択肢の例</th></tr></thead>
+      <tbody>
+        <tr><td>孫要素を親のグリッド線へ揃える</td><td>Gridを複雑に入れ子にする</td><td>CSS Subgrid</td></tr>
+        <tr><td>モーダルを表示する</td><td>独自divと大量のイベント処理</td><td><code>&lt;dialog&gt;</code></td></tr>
+        <tr><td>ツールチップを配置する</td><td>JavaScriptで位置を計算する</td><td>Anchor Positioning</td></tr>
+        <tr><td>配列をグループ化する</td><td><code>reduce()</code>で自作する</td><td><code>Object.groupBy()</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>チェック対象の6分野</h2>
+    <table>
+      <thead><tr><th>分野</th><th>内容例</th></tr></thead>
+      <tbody>
+        <tr><td>ユーザーエクスペリエンス</td><td>View Transitions、表示・非表示アニメーション、スクロール表現</td></tr>
+        <tr><td>CSSレイアウト</td><td>Container Queries、Subgrid、<code>oklch()</code>、text-wrap</td></tr>
+        <tr><td>パフォーマンス</td><td>先読み、INP診断、画像優先度、タスク分割</td></tr>
+        <tr><td>フォーム &amp; UI</td><td>Popover API、<code>&lt;dialog&gt;</code>、Anchor Positioning、入力検証</td></tr>
+        <tr><td>アクセシビリティ</td><td>スクリーンリーダー、キーボード操作、エラー通知</td></tr>
+        <tr><td>ブラウザ内蔵AI</td><td>端末内の翻訳、要約、言語検出</td></tr>
+      </tbody>
+    </table>
+
+    <p>2026-06-11時点の公式リポジトリでは、102のWeb機能と128の実務ユースケースが掲載されています。ただし、公式にはプレビューリリースとされています。</p>
+
+    <h2>Baselineとの連携</h2>
+    <p>新しいWeb機能を採用する際には、対象ブラウザで安全に利用できるかが問題になります。Modern Web Guidanceは、主要ブラウザの対応状況を示すBaselineのデータを利用し、プロジェクトの対応方針に応じて機能やフォールバックを提案します。</p>
+
+    <div class="diagram" aria-label="Baselineを使った提案判断">
+      <div>実現したい機能を<br>エージェントへ依頼</div>
+      <div>Baselineで現在の<br>ブラウザ対応を確認</div>
+      <div>採用・フォールバック・<br>見送りを提案</div>
+    </div>
+
+    <p>重要なのは「常に最新機能を使う」ことではなく、ブラウザ対応、保守性、既存実装との相性を考えて選択できる点です。</p>
+
+    <h2>仕組み: searchとretrieve</h2>
+    <p>AIエージェントがフロントエンドの依頼を受けると、主に2段階で必要なガイドを取得します。</p>
+
+    <pre><code># 関連ガイドを検索
+npx modern-web-guidance@latest search "animate a dialog modal backdrop"
+
+# 選んだガイドの詳細を取得
+npx modern-web-guidance@latest retrieve "animate-to-from-top-layer"</code></pre>
+
+    <ol>
+      <li><code>search</code>が依頼に近いガイドを類似度付きで返す。</li>
+      <li><code>retrieve</code>が選択されたガイドの実装方法と対応状況を返す。</li>
+      <li>AIエージェントが取得した情報を使って実装またはレビューする。</li>
+    </ol>
+
+    <p>元記事によると、検索はローカルのTensorFlow.jsで動作し、APIキーや検索時のネットワーク通信を必要としません。</p>
+
+    <h2>導入方法</h2>
+    <pre><code>npx modern-web-guidance@latest install</code></pre>
+    <p>対話形式のウィザードが起動し、Codex、Claude Code、Cursorなど、利用するエージェントに合わせてスキルを配置します。導入後に自動発動しない場合は、「Modern Web Guidanceを使ってレビューして」のように明示します。</p>
+
+    <h2>記事内で紹介された効果</h2>
+    <p>Google公式の評価では、Claude Opus 4.7へ75件の曖昧なWeb開発タスクを依頼し、正しくモダンに実装できた割合が、スキルなしの約52%からスキルありの85%へ改善したと紹介されています。</p>
+
+    <p>また、元記事の筆者が自身のポートフォリオを監査した結果、次のように整理できたとしています。</p>
+    <ul>
+      <li><strong>採用済み:</strong> <code>oklch()</code>、<code>:has()</code>、Subgridなどを確認。</li>
+      <li><strong>改善候補:</strong> テーマ切り替え時のちらつき対策、<code>font-size-adjust</code>などを提案。</li>
+      <li><strong>見送り:</strong> 過去の経緯や既存サイトとの相性を考慮し、採用しない案も理由付きで整理。</li>
+    </ul>
+
+    <h2>実務での使い方</h2>
+    <h3>新規実装</h3>
+    <pre><code>Modern Web Guidanceを使い、アクセシブルなダイアログを実装して。
+対応ブラウザとフォールバックも説明して。</code></pre>
+
+    <h3>既存サイトの監査</h3>
+    <pre><code>このリポジトリをModern Web Guidanceで監査して。
+提案を「採用推奨・条件付き・見送り」に分類し、
+アクセシビリティとパフォーマンスを優先して。</code></pre>
+
+    <h3>導入判断</h3>
+    <pre><code>この実装をPopover APIへ変更する利点とリスクを調査して。
+対象ブラウザ、フォールバック、削減できるコード量を比較して。</code></pre>
+
+    <h2>注意点</h2>
+    <ul>
+      <li>プレビューリリースのため、内容や導入方法が変わる可能性がある。</li>
+      <li>Baseline対応だけで採用を決めず、自社の対象ブラウザと利用者環境を確認する。</li>
+      <li>新機能への置き換えが、必ずしも既存プロジェクトの保守性を上げるとは限らない。</li>
+      <li>生成されたコードは、アクセシビリティ、性能、セキュリティ、実ブラウザでの挙動を人間が確認する。</li>
+      <li>既存フレームワークやデザインシステムの方針と衝突しないか確認する。</li>
+    </ul>
+
+    <div class="callout">
+      <strong>記事の結論</strong>
+      <p>Modern Web Guidanceの価値は、最新技術を闇雲に使わせることではありません。AIが古い実装へ流れるのを防ぎ、現在のWeb標準を採用するか、フォールバックするか、見送るかを判断する材料を与えることです。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://zenn.dev/ubie_dev/articles/modern-web-guidance">GoogleのModern Web Guidanceスキル登場。AIが古いCSS・JSを書く問題を解決する</a> — Ubieテックブログ / Zenn、確認日: 2026-06-11</li>
+      <li><a href="https://github.com/GoogleChrome/modern-web-guidance">GoogleChrome/modern-web-guidance</a> — Google Chrome / GitHub、確認日: 2026-06-11</li>
+      <li><a href="https://developer.chrome.com/docs/modern-web-guidance">Modern Web Guidance</a> — Chrome for Developers、確認日: 2026-06-11</li>
+    </ul>
+  </main>
+</body>
+</html>
