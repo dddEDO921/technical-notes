@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Argo CDとGitOpsの仕組み、構成要素、Application定義、同期戦略、ApplicationSet、実運用の注意点を解説">
+  <title>Argo CDをエンジニア向けに理解する | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Infrastructure · 2026-06-11</p>
+    <h1>Argo CDをエンジニア向けに理解する</h1>
+    <p class="lead">Argo CDは、Gitに記述された望ましい状態とKubernetesクラスタの実状態を継続的に比較し、差分を可視化・同期するGitOps型のContinuous Deliveryツールです。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>Argo CDは「GitのこのコミットどおりにKubernetesを保つ」コントローラーです。Gitへの変更を検知してデプロイし、クラスタ上の手作業変更も差分として検出します。CIがクラスタへ直接pushするのではなく、Argo CDがGitから望ましい状態をpullして継続的に収束させます。</p>
+    </div>
+
+    <h2>Argo CDとGitOps</h2>
+    <p>GitOpsでは、アプリケーションと環境の望ましい状態を宣言的な設定としてGitで管理します。変更はPull Requestでレビューされ、Gitの履歴が「いつ・誰が・何を変えたか」の監査証跡になります。</p>
+
+    <div class="diagram" aria-label="Argo CDを使ったGitOpsの流れ">
+      <div>開発者・CIが<br>GitのManifestを変更</div>
+      <div>Argo CDがGitと<br>クラスタを比較</div>
+      <div>差分を同期し<br>望ましい状態へ収束</div>
+    </div>
+
+    <table>
+      <thead><tr><th>従来のCI/CD</th><th>Argo CDによるGitOps</th></tr></thead>
+      <tbody>
+        <tr><td>CIがクラスタへ直接デプロイする</td><td>Argo CDがGitの状態をクラスタへ反映する</td></tr>
+        <tr><td>CIへクラスタ資格情報を渡すことがある</td><td>デプロイ権限をクラスタ内のArgo CDへ集約できる</td></tr>
+        <tr><td>実状態の手作業変更を検出しにくい</td><td>Gitとの差分を継続的に検出する</td></tr>
+        <tr><td>再実行手順やジョブログが中心</td><td>Gitコミットから望ましい状態を再現できる</td></tr>
+      </tbody>
+    </table>
+
+    <h2>中心概念: Reconciliation</h2>
+    <p>Argo CDはKubernetes Controllerとして動作し、Gitの望ましい状態とクラスタの実状態を繰り返し比較します。この制御ループをreconciliationと呼びます。</p>
+
+    <div class="diagram" aria-label="Argo CDのreconciliationループ">
+      <div>Desired State<br><small>Git上のManifest</small></div>
+      <div>Compare &amp; Sync<br><small>差分検出・反映</small></div>
+      <div>Live State<br><small>Kubernetesクラスタ</small></div>
+    </div>
+
+    <ul>
+      <li><strong>Synced:</strong> Gitとクラスタの状態が一致している。</li>
+      <li><strong>OutOfSync:</strong> Gitとクラスタに差分がある。</li>
+      <li><strong>Healthy:</strong> Deploymentなどが期待どおり稼働している。</li>
+      <li><strong>Degraded:</strong> リソースが失敗・異常状態にある。</li>
+    </ul>
+
+    <p><code>Synced</code>でもPodが起動失敗していれば<code>Degraded</code>になり得ます。同期状態とヘルス状態は別の軸です。</p>
+
+    <h2>主要コンポーネント</h2>
+    <table>
+      <thead><tr><th>コンポーネント</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td>Application Controller</td><td>Applicationを監視し、Gitとクラスタを比較して同期・ヘルス評価を行う中心コントローラー</td></tr>
+        <tr><td>Repository Server</td><td>Git、Helm、Kustomizeなどからデプロイ対象のManifestを生成・キャッシュする</td></tr>
+        <tr><td>API Server</td><td>Web UI、CLI、API、認証、RBAC、Webhookなどの窓口</td></tr>
+        <tr><td>ApplicationSet Controller</td><td>複数クラスタ・環境・ディレクトリ向けのApplicationをテンプレートから生成する</td></tr>
+        <tr><td>Redis</td><td>キャッシュ用途で利用される</td></tr>
+        <tr><td>Dex</td><td>必要に応じて外部IdPとの認証連携に利用される</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Applicationリソース</h2>
+    <p>Argo CDでは、どのGitリポジトリの何を、どのクラスタ・Namespaceへデプロイするかを<code>Application</code>カスタムリソースで宣言します。</p>
+
+    <pre><code>apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sample-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/example/platform-config.git
+    targetRevision: main
+    path: environments/production/sample-api
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sample-api
+  syncPolicy:
+    automated:
+      enabled: true
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true</code></pre>
+
+    <table>
+      <thead><tr><th>設定</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td><code>source</code></td><td>Gitリポジトリ、リビジョン、Manifestのパス</td></tr>
+        <tr><td><code>destination</code></td><td>デプロイ先クラスタとNamespace</td></tr>
+        <tr><td><code>project</code></td><td>許可するリポジトリ、クラスタ、リソース種別などの境界</td></tr>
+        <tr><td><code>automated</code></td><td>差分を自動同期するか</td></tr>
+        <tr><td><code>prune</code></td><td>Gitから削除された管理対象リソースをクラスタからも削除するか</td></tr>
+        <tr><td><code>selfHeal</code></td><td>クラスタ側で変更された状態をGitの状態へ戻すか</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Manifestの管理方法</h2>
+    <p>Argo CDはプレーンなYAML/JSONだけでなく、Helm、Kustomize、Jsonnet、Config Management Pluginなどを扱えます。</p>
+
+    <table>
+      <thead><tr><th>方式</th><th>向いている場面</th><th>注意点</th></tr></thead>
+      <tbody>
+        <tr><td>Plain YAML</td><td>小規模で単純な構成</td><td>環境差分で重複しやすい</td></tr>
+        <tr><td>Kustomize</td><td>共通baseへ環境差分を重ねる</td><td>overlayの複雑化に注意</td></tr>
+        <tr><td>Helm</td><td>再利用可能なchartとvaluesで管理する</td><td>テンプレート結果がGit上で直接見えにくい</td></tr>
+        <tr><td>Plugin</td><td>独自生成ツールやSecret連携</td><td>実行コードの信頼境界と保守が増える</td></tr>
+      </tbody>
+    </table>
+
+    <h2>典型的なデプロイフロー</h2>
+    <ol>
+      <li>開発者がアプリケーションコードを変更する。</li>
+      <li>CIがテストを行い、コンテナイメージをビルド・Registryへpushする。</li>
+      <li>CIまたは別の自動化がGitOpsリポジトリのイメージタグを更新し、Pull Requestを作る。</li>
+      <li>レビュー後にGitOpsリポジトリへマージする。</li>
+      <li>Argo CDが差分を検出し、手動または自動でクラスタへ同期する。</li>
+      <li>Argo CDが同期状態とリソースのヘルスを監視する。</li>
+    </ol>
+
+    <div class="callout">
+      <strong>責務の分離</strong>
+      <p>CIはテストと成果物作成、Argo CDは望ましい状態のデプロイと継続監視を担当します。CIから直接<code>kubectl apply</code>する必要がなくなります。</p>
+    </div>
+
+    <h2>同期戦略</h2>
+    <h3>手動同期</h3>
+    <p>Gitとの差分を確認し、人間がSyncを実行します。本番導入初期や、厳格な変更承認が必要な環境で理解しやすい方法です。</p>
+
+    <h3>自動同期</h3>
+    <p>Gitの変更を検知すると自動で同期します。Gitへのマージをデプロイ承認として扱えるため、CIからArgo CD APIを呼ぶ必要がありません。</p>
+
+    <h3>PruneとSelf Heal</h3>
+    <ul>
+      <li><strong>Prune:</strong> Gitから消えたリソースをクラスタから削除する。便利だが削除事故の影響が大きい。</li>
+      <li><strong>Self Heal:</strong> <code>kubectl edit</code>などで生じたdriftをGitの状態へ戻す。</li>
+    </ul>
+
+    <p>本番で自動同期・Prune・Self Healを有効にする場合、Pull Requestレビュー、保護ブランチ、AppProject、Sync Window、通知、復旧手順を組み合わせます。</p>
+
+    <h2>適用順序: Hooks・Phases・Waves</h2>
+    <p>複数リソースの適用順序や、デプロイ前後の処理はSync Phases、Resource Hooks、Sync Wavesで制御できます。</p>
+
+    <table>
+      <thead><tr><th>仕組み</th><th>用途例</th></tr></thead>
+      <tbody>
+        <tr><td>PreSync Hook</td><td>デプロイ前のDBマイグレーションや検証Job</td></tr>
+        <tr><td>Sync</td><td>通常のManifest適用</td></tr>
+        <tr><td>PostSync Hook</td><td>デプロイ後のスモークテストや通知</td></tr>
+        <tr><td>SyncFail Hook</td><td>同期失敗時の通知や後処理</td></tr>
+        <tr><td>Sync Wave</td><td>Namespace、CRD、アプリのように適用順序を数値で指定</td></tr>
+      </tbody>
+    </table>
+
+    <p>順序制御を増やしすぎると、宣言的な構成が暗黙の手順書へ変わります。依存関係を減らし、失敗時に再実行可能な処理へすることが重要です。</p>
+
+    <h2>ApplicationSetと複数環境</h2>
+    <p>ApplicationSetは、テンプレートとGeneratorから複数のApplicationを生成します。クラスタごと、環境ごと、Gitディレクトリごとに同じアプリを展開する場合に有効です。</p>
+
+    <div class="diagram" aria-label="ApplicationSetの役割">
+      <div>Generator<br><small>cluster・Git・listなど</small></div>
+      <div>ApplicationSet<br><small>Applicationをテンプレート生成</small></div>
+      <div>複数クラスタ・環境へ<br>一貫してデプロイ</div>
+    </div>
+
+    <p>ApplicationSetは大規模運用を簡潔にしますが、テンプレートの誤りが多数環境へ波及します。対象選択条件、変更レビュー、段階的展開を慎重に設計します。</p>
+
+    <h2>リポジトリ構成の代表例</h2>
+    <pre><code>platform-config/
+├── applications/
+│   ├── sample-api/
+│   │   ├── base/
+│   │   └── overlays/
+│   │       ├── staging/
+│   │       └── production/
+├── clusters/
+│   ├── staging/
+│   └── production/
+└── argocd/
+    ├── projects/
+    └── applicationsets/</code></pre>
+
+    <p>アプリコードとGitOps設定を同じリポジトリに置く方法、別リポジトリに分ける方法の両方があります。別リポジトリにすると、アプリの変更とデプロイ承認、アクセス権限、監査境界を分離しやすくなります。</p>
+
+    <h2>Secret管理</h2>
+    <p>Gitを正解にしても、平文のSecretをGitへ保存してはいけません。Argo CD自体は汎用Secret管理システムではないため、組織の要件に合わせて別の仕組みを組み合わせます。</p>
+
+    <ul>
+      <li>External Secrets Operatorなどで外部Secret Managerから同期する。</li>
+      <li>Sealed SecretsやSOPSなどで暗号化した値をGit管理する。</li>
+      <li>Config Management Pluginを使う場合、Repository Serverで実行するコードと権限を厳格に管理する。</li>
+      <li>Argo CDが利用するGit・クラスタ資格情報を最小権限にする。</li>
+    </ul>
+
+    <h2>設計・運用で重要な点</h2>
+    <ul>
+      <li><strong>AppProjectで境界を作る:</strong> チームごとに許可リポジトリ、宛先クラスタ、Namespace、リソース種別を制限する。</li>
+      <li><strong>Gitへの直接変更を防ぐ:</strong> 保護ブランチ、レビュー、署名、CI検証を導入する。</li>
+      <li><strong>手作業変更を原則禁止する:</strong> 緊急変更を行った場合も、すぐGitへ反映してdriftを解消する。</li>
+      <li><strong>タグを固定する:</strong> 本番では<code>latest</code>を避け、イメージdigestや不変タグで再現性を確保する。</li>
+      <li><strong>差分を理解する:</strong> mutating webhookやcontrollerが変更するフィールドは、安易にignoreせず原因を把握する。</li>
+      <li><strong>通知と監視を整備する:</strong>同期失敗、Degraded、OutOfSyncの長期化を検知する。</li>
+      <li><strong>Argo CD自体を保護する:</strong> SSO、RBAC、TLS、ネットワーク制限、バックアップ、アップグレード手順を整える。</li>
+    </ul>
+
+    <h2>よくある失敗</h2>
+    <table>
+      <thead><tr><th>失敗</th><th>問題</th><th>改善</th></tr></thead>
+      <tbody>
+        <tr><td>Argo CD導入後もCIから直接applyする</td><td>正解の経路が複数になり、driftや競合が発生する</td><td>デプロイ経路をGit経由へ統一する</td></tr>
+        <tr><td>Gitへ平文Secretを置く</td><td>履歴に資格情報が永続化する</td><td>外部Secret管理や暗号化を使う</td></tr>
+        <tr><td>全チームへ管理者権限を与える</td><td>誤操作・侵害時の影響範囲が広い</td><td>AppProjectとRBACで最小権限にする</td></tr>
+        <tr><td>最初から全環境で自動Pruneする</td><td>Gitの誤削除が即座に本番へ反映される</td><td>段階導入とレビュー・保護策を設ける</td></tr>
+        <tr><td>OutOfSyncをすべてignoreする</td><td>本来検知すべきdriftを隠す</td><td>差分の発生源を特定して限定的に設定する</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Argo CDが向いているケース</h2>
+    <ul>
+      <li>Kubernetes上の複数アプリ・環境・クラスタを一貫して管理したい。</li>
+      <li>Pull RequestレビューとGit履歴をデプロイ監査へ利用したい。</li>
+      <li>クラスタのdriftを検出・修復したい。</li>
+      <li>開発チームへセルフサービスなデプロイ体験を提供しつつ、権限境界を保ちたい。</li>
+    </ul>
+
+    <h2>慎重に判断するケース</h2>
+    <ul>
+      <li>Kubernetesを使っていない、または対象がごく小規模。</li>
+      <li>Git上で宣言できない手続き的なデプロイが中心。</li>
+      <li>GitOpsリポジトリ、権限、Secret、監視を運用する体制がない。</li>
+    </ul>
+
+    <div class="callout">
+      <strong>理解の要点</strong>
+      <p>Argo CDは単なるデプロイボタンではなく、Gitの宣言とクラスタの実状態を継続的に一致させるコントローラーです。導入効果は、Gitを本当に唯一の正解として運用できるかで決まります。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://argo-cd.readthedocs.io/en/stable/">Argo CD Overview</a> — Argo CD Documentation、確認日: 2026-06-11</li>
+      <li><a href="https://argo-cd.readthedocs.io/en/stable/operator-manual/architecture/">Architectural Overview</a> — Argo CD Documentation、確認日: 2026-06-11</li>
+      <li><a href="https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/">Automated Sync Policy</a> — Argo CD Documentation、確認日: 2026-06-11</li>
+      <li><a href="https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/">Sync Phases and Waves</a> — Argo CD Documentation、確認日: 2026-06-11</li>
+      <li><a href="https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/">ApplicationSet</a> — Argo CD Documentation、確認日: 2026-06-11</li>
+      <li><a href="https://www.cncf.io/projects/argo/">Argo Project</a> — Cloud Native Computing Foundation、確認日: 2026-06-11</li>
+    </ul>
+  </main>
+</body>
+</html>
