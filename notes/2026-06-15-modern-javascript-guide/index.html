@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="モダンなJavaScript実装を、標準API、モジュール設計、非同期処理、DOM操作、安全性、性能、テストの観点から解説">
+  <title>モダンなJavaScript実装ガイド | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Frontend · 2026-06-15</p>
+    <h1>モダンなJavaScript実装ガイド</h1>
+    <p class="lead">新しい構文を並べるだけではなく、標準APIを優先し、依存関係・非同期処理・副作用を制御して、安全で検証可能なコードを書くための実務指針。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>モダンなJavaScript実装とは、ES Modulesで責務を分け、標準APIを活用し、非同期処理をキャンセル可能にし、DOM操作と外部入力を安全に扱うことです。さらに、必要なJavaScriptだけを配信し、テスト・Lint・型チェックで変更の安全性を保ちます。</p>
+    </div>
+
+    <h2>「モダン」の判断基準</h2>
+    <p>新しい構文を使っているかより、次の性質を満たすかで判断します。</p>
+
+    <div class="diagram" aria-label="モダンJavaScriptの判断基準">
+      <div>標準を優先し<br>依存を減らす</div>
+      <div>責務と副作用を分け<br>テスト可能にする</div>
+      <div>性能・安全性・互換性を<br>計測して判断する</div>
+    </div>
+
+    <ul>
+      <li>対象ブラウザ・ランタイムを明確にし、対応状況を確認して機能を選ぶ。</li>
+      <li>ブラウザやJavaScript標準で解決できることに、不要なライブラリを追加しない。</li>
+      <li>状態変更、ネットワーク、DOM操作などの副作用を境界へ寄せる。</li>
+      <li>失敗、キャンセル、タイムアウト、再試行を正常系と同じように設計する。</li>
+      <li>初期表示に不要なJavaScriptを送らず、実行時間を含めて性能を考える。</li>
+    </ul>
+
+    <h2>1. ES Modulesで責務を分ける</h2>
+    <p>ブラウザはES Modulesを標準で扱えます。<code>import</code>・<code>export</code>で依存関係を明示し、グローバル変数や実行順への暗黙依存を避けます。</p>
+
+    <pre><code>// api/users.js
+export async function getUser(id, { signal } = {}) {
+  const response = await fetch(`/api/users/${encodeURIComponent(id)}`, { signal });
+
+  if (!response.ok) {
+    throw new Error(`User request failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// pages/profile.js
+import { getUser } from "../api/users.js";</code></pre>
+
+    <p>モジュールは「小さければよい」のではなく、変更理由と責務がまとまっていることが重要です。公開APIを絞り、内部実装を隠すことで変更範囲を限定できます。</p>
+
+    <h3>Dynamic Importを使う場面</h3>
+    <pre><code>button.addEventListener("click", async () => {
+  const { openEditor } = await import("./editor.js");
+  openEditor();
+});</code></pre>
+
+    <p>重い機能を必要になった時点で読み込めます。ただし細かく分割しすぎると通信・管理コストが増えるため、利用頻度とバンドル分析を基準に判断します。</p>
+
+    <h2>2. データを明示的に扱う</h2>
+    <p><code>const</code>を基本にし、再代入が必要な場合だけ<code>let</code>を使います。値の変化を追いやすくし、意図しない共有状態を減らします。</p>
+
+    <pre><code>function calculateTotal(items) {
+  return items.reduce((total, item) => total + item.price * item.quantity, 0);
+}
+
+const total = calculateTotal(cartItems);</code></pre>
+
+    <p>純粋関数は同じ入力に対して同じ出力を返し、外部状態を変更しません。ビジネスロジックを純粋関数へ寄せると、DOMやネットワークなしでテストできます。</p>
+
+    <h3>Optional ChainingとNullish Coalescing</h3>
+    <pre><code>const displayName = user.profile?.displayName ?? "名称未設定";</code></pre>
+
+    <p><code>?.</code>は<code>null</code>・<code>undefined</code>を安全に扱い、<code>??</code>はその2値だけを欠損として既定値を返します。<code>||</code>と違い、<code>0</code>や空文字を有効値として保持できます。ただし、必須データまで黙って欠損扱いにすると不具合を隠すため、契約違反は明示的に失敗させます。</p>
+
+    <h3>深いコピー</h3>
+    <pre><code>const editableDraft = structuredClone(originalData);</code></pre>
+
+    <p>対応するデータ型の深いコピーには<code>structuredClone()</code>を使えます。JSONへの変換をコピー目的で使うと、<code>Date</code>、循環参照、<code>undefined</code>などを正しく扱えません。</p>
+
+    <h2>3. 非同期処理を設計する</h2>
+    <p><code>async</code>/<code>await</code>はPromiseを読みやすく扱う構文です。重要なのは、直列・並列・部分失敗のどれが要件に合うかを明示することです。</p>
+
+    <h3>独立した処理は並列化する</h3>
+    <pre><code>const [user, notifications] = await Promise.all([
+  fetchUser(),
+  fetchNotifications(),
+]);</code></pre>
+
+    <p>前の結果を必要としない処理を順番に<code>await</code>すると、待ち時間を不要に足し合わせます。一方、1件の失敗で全体を失敗させたくない場合は<code>Promise.allSettled()</code>を検討します。</p>
+
+    <h3>キャンセル可能にする</h3>
+    <pre><code>let activeController;
+
+async function searchUsers(query) {
+  activeController?.abort();
+  activeController = new AbortController();
+
+  try {
+    const response = await fetch(`/api/users?q=${encodeURIComponent(query)}`, {
+      signal: activeController.signal,
+    });
+
+    if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    if (error.name === "AbortError") return [];
+    throw error;
+  }
+}</code></pre>
+
+    <p>検索入力、画面遷移、コンポーネント破棄などでは、不要になったリクエストを<code>AbortController</code>で中止します。古いレスポンスが新しい画面を上書きする競合も防ぎやすくなります。</p>
+
+    <h3>Fetchの注意点</h3>
+    <p><code>fetch()</code>はHTTP 404や500だけではrejectしません。ネットワークエラーとHTTPエラーを区別し、<code>response.ok</code>またはステータスを確認します。再試行は冪等性、回数、待機時間、サーバー負荷を考慮して設計します。</p>
+
+    <h2>4. DOM操作を安全で局所的にする</h2>
+    <p>DOM操作は副作用です。データ変換と表示更新を分離し、DOM探索やイベント登録を特定のモジュールへ閉じ込めます。</p>
+
+    <pre><code>function createUserItem(user) {
+  const item = document.createElement("li");
+  const name = document.createElement("strong");
+
+  name.textContent = user.name;
+  item.append(name);
+  return item;
+}</code></pre>
+
+    <p>外部入力を表示するだけなら<code>textContent</code>を使います。信頼できない文字列を<code>innerHTML</code>へ直接入れるとDOM-based XSSにつながります。HTMLを受け入れる必要がある場合は、要件を限定し、実績あるサニタイザー、Content Security Policy、Trusted Typesなどを組み合わせます。</p>
+
+    <h3>イベント委譲</h3>
+    <pre><code>list.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-delete-id]");
+  if (!button || !list.contains(button)) return;
+
+  deleteItem(button.dataset.deleteId);
+});</code></pre>
+
+    <p>動的な一覧では親要素へイベントを登録することで、各要素への大量登録を避けられます。対象要素と境界を必ず確認します。</p>
+
+    <h2>5. 標準Web APIを優先する</h2>
+    <p>モダンブラウザには、以前はライブラリが必要だった機能が標準で用意されています。</p>
+
+    <table>
+      <thead><tr><th>目的</th><th>標準API・要素の例</th></tr></thead>
+      <tbody>
+        <tr><td>通信</td><td>Fetch API、AbortController</td></tr>
+        <tr><td>表示領域の監視</td><td>IntersectionObserver</td></tr>
+        <tr><td>要素サイズの監視</td><td>ResizeObserver</td></tr>
+        <tr><td>モーダル</td><td><code>&lt;dialog&gt;</code></td></tr>
+        <tr><td>一時的なUI</td><td>Popover API</td></tr>
+        <tr><td>日付・数値・相対時間の表示</td><td>Intl API</td></tr>
+        <tr><td>バックグラウンド処理</td><td>Web Workers</td></tr>
+        <tr><td>深いコピー</td><td><code>structuredClone()</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>標準APIを選ぶ前に対象環境の対応状況を確認します。機能検出、段階的強化、フォールバックを使い、ユーザー環境に合わない最新機能を無理に採用しません。</p>
+
+    <h2>6. 必要なJavaScriptだけを実行する</h2>
+    <p>JavaScriptはダウンロード後に解析・コンパイル・実行され、メインスレッドを占有します。ファイルサイズだけでなく実行コストを減らします。</p>
+
+    <ul>
+      <li>HTMLとCSSで実現できる機能をJavaScriptで再実装しない。</li>
+      <li>初期表示に不要な機能はdynamic importで遅延読み込みする。</li>
+      <li>大きな処理を分割し、入力応答を長時間ブロックしない。</li>
+      <li>CPU負荷の高い処理は必要に応じてWeb Workerへ移す。</li>
+      <li>依存ライブラリのサイズ、重複、実際の利用箇所を定期的に確認する。</li>
+      <li>推測ではなく、Performance panel、Lighthouse、実ユーザー計測などで確認する。</li>
+    </ul>
+
+    <h2>7. 型・Lint・テストで変更を守る</h2>
+    <p>JavaScriptプロジェクトでも、JSDocと<code>checkJs</code>、またはTypeScriptを使うと、API境界やデータ構造の不整合を早期に検出できます。型は実行時検証の代わりではないため、外部入力は別途検証します。</p>
+
+    <pre><code>/**
+ * @param {{ price: number, quantity: number }[]} items
+ * @returns {number}
+ */
+export function calculateTotal(items) {
+  return items.reduce((total, item) => total + item.price * item.quantity, 0);
+}</code></pre>
+
+    <table>
+      <thead><tr><th>仕組み</th><th>守るもの</th></tr></thead>
+      <tbody>
+        <tr><td>Formatter</td><td>機械的な書式統一</td></tr>
+        <tr><td>Linter</td><td>危険な構文、未使用コード、プロジェクト規約</td></tr>
+        <tr><td>型チェック</td><td>値・関数・モジュール間の契約</td></tr>
+        <tr><td>Unit Test</td><td>純粋なロジックと境界条件</td></tr>
+        <tr><td>Integration / E2E Test</td><td>DOM、通信、画面遷移を含む利用者フロー</td></tr>
+      </tbody>
+    </table>
+
+    <h2>8. 状態とアーキテクチャを単純に保つ</h2>
+    <p>状態管理ライブラリを導入する前に、状態の所有者、寿命、更新経路を決めます。状態は利用範囲に最も近い場所へ置き、同じ情報を複数箇所で持たないようにします。</p>
+
+    <div class="diagram" aria-label="モダンJavaScriptの責務分離">
+      <div>Domain Logic<br><small>純粋関数・ルール</small></div>
+      <div>Application Boundary<br><small>状態・ユースケース</small></div>
+      <div>Effects<br><small>DOM・通信・Storage</small></div>
+    </div>
+
+    <p>フレームワークを使う場合も、この分離は有効です。フレームワーク固有APIへすべてのロジックを埋め込まず、変更しやすい境界を作ります。</p>
+
+    <h2>避けたい実装</h2>
+    <table>
+      <thead><tr><th>避けたい例</th><th>問題</th><th>改善</th></tr></thead>
+      <tbody>
+        <tr><td>巨大な1ファイルとグローバル状態</td><td>依存関係と変更影響が見えない</td><td>責務単位のES Modulesと明示的な入力・出力</td></tr>
+        <tr><td><code>innerHTML</code>へ外部入力を代入</td><td>XSSの危険</td><td><code>textContent</code>、安全なDOM生成、必要時のサニタイズ</td></tr>
+        <tr><td>すべてのPromiseを順番にawait</td><td>不要な待ち時間</td><td>依存のない処理を並列化</td></tr>
+        <tr><td>不要になったfetchを放置</td><td>競合、通信浪費、古い画面更新</td><td>AbortControllerでキャンセル</td></tr>
+        <tr><td>便利そうなライブラリを即追加</td><td>配信量、脆弱性、更新コストが増える</td><td>標準APIと既存依存を先に確認</td></tr>
+        <tr><td>最新構文を無条件に採用</td><td>対象環境で動かない</td><td>対応状況・ビルド方針・フォールバックを確認</td></tr>
+        <tr><td>例外をすべて握りつぶす</td><td>障害が検知できない</td><td>回復可能な失敗だけ処理し、必要な文脈で報告</td></tr>
+      </tbody>
+    </table>
+
+    <h2>実装レビューのチェックリスト</h2>
+    <ul>
+      <li>対象ブラウザ・Node.jsバージョンに対応しているか。</li>
+      <li>標準APIで十分な処理に新しい依存を追加していないか。</li>
+      <li>モジュールの責務と公開APIが明確か。</li>
+      <li>非同期処理の失敗、キャンセル、競合を扱っているか。</li>
+      <li>外部入力を検証し、安全なDOM APIを使っているか。</li>
+      <li>初期表示に不要なJavaScriptを読み込んでいないか。</li>
+      <li>重要なロジックをDOMや通信から分離し、テストできるか。</li>
+      <li>アクセシビリティを標準HTML・UI要素と実ブラウザで確認したか。</li>
+    </ul>
+
+    <div class="callout">
+      <strong>実務上の結論</strong>
+      <p>モダンJavaScriptの目的は「新しい書き方を使うこと」ではなく、ブラウザ標準を活かしながら、変更しやすく、失敗に強く、利用者へ余計な負荷を与えない実装を作ることです。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules">JavaScript modules</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function">async function</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/AbortController">AbortController</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone">structuredClone()</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API">Trusted Types API</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining">Optional chaining</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing">Nullish coalescing operator</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html">DOM based XSS Prevention Cheat Sheet</a> — OWASP、確認日: 2026-06-15</li>
+    </ul>
+  </main>
+</body>
+</html>
