@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="JavaScript実装のベストプラクティスとアンチパターンを、設計、非同期処理、DOM、安全性、性能、テストの観点から対比">
+  <title>JavaScriptのベストプラクティスとアンチパターン | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Frontend · 2026-06-15</p>
+    <h1>JavaScriptのベストプラクティスとアンチパターン</h1>
+    <p class="lead">読みやすい構文集ではなく、変更時の事故、非同期の競合、性能劣化、セキュリティ問題を減らすための設計判断を、良い例と悪い例で整理します。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>良いJavaScript実装は、状態・依存・副作用・失敗条件が見えるコードです。アンチパターンは、短期的には便利でも、それらを暗黙化して変更影響を読めなくします。ベストプラクティスは絶対規則ではなく、要件・対象環境・計測結果に合わせて選びます。</p>
+    </div>
+
+    <h2>「ベストエフォート」と「ベストプラクティス」</h2>
+    <p>一般に実装指針を指す言葉は<strong>ベストプラクティス</strong>です。ベストエフォートは「可能な範囲で最大限努力するが、結果は保証しない」という意味で、通信品質やサービス提供条件などで使われます。</p>
+    <p>ただし、ベストプラクティスも万能な正解ではありません。チームの規模、製品寿命、対象ブラウザ、性能要件、障害時の影響によって適切な選択は変わります。</p>
+
+    <div class="diagram" aria-label="良い実装判断の流れ">
+      <div>要件と制約を<br>明確にする</div>
+      <div>単純で検証可能な<br>実装を選ぶ</div>
+      <div>テストと計測で<br>判断を更新する</div>
+    </div>
+
+    <h2>早見表</h2>
+    <table>
+      <thead><tr><th>ベストプラクティス</th><th>アンチパターン</th></tr></thead>
+      <tbody>
+        <tr><td>依存関係と入力・出力を明示する</td><td>グローバル状態と暗黙の実行順に依存する</td></tr>
+        <tr><td>必要最小限の公開APIを持つ</td><td>巨大な万能モジュールを共有する</td></tr>
+        <tr><td>非同期処理の失敗・競合・キャンセルを設計する</td><td>Promiseを放置し、古い結果でも画面を更新する</td></tr>
+        <tr><td>外部入力を境界で検証する</td><td>型やAPIレスポンスを無条件に信頼する</td></tr>
+        <tr><td>安全なDOM APIを使う</td><td>外部入力を<code>innerHTML</code>へ直接代入する</td></tr>
+        <tr><td>計測して性能を改善する</td><td>推測で複雑な最適化を入れる</td></tr>
+      </tbody>
+    </table>
+
+    <h2>1. 状態と依存関係</h2>
+    <h3>推奨: 状態の所有者と更新経路を1つにする</h3>
+    <pre><code>export function createCart() {
+  let items = [];
+
+  return {
+    getItems: () => structuredClone(items),
+    addItem: (item) => {
+      items = [...items, item];
+    },
+  };
+}</code></pre>
+
+    <p>状態を更新できる場所を限定し、外部へはコピーまたは読み取り専用の表現を返します。どこからでも直接変更できる状態は、変更原因を追いにくくします。</p>
+
+    <h3>アンチパターン: グローバルな可変状態</h3>
+    <pre><code>// どのファイルからでも変更できる
+window.appState = {
+  currentUser: null,
+  cart: [],
+  loading: false,
+};</code></pre>
+
+    <p>テスト間で状態が漏れ、実行順依存や競合が生まれます。共有が必要な場合でも、更新API、寿命、初期化方法、監視方法を明示します。</p>
+
+    <h3>アンチパターン: Boolean引数だらけの関数</h3>
+    <pre><code>// 呼び出し側で意味が分からない
+renderUser(user, true, false, true);
+
+// 意図が分かる
+renderUser(user, {
+  showAvatar: true,
+  editable: false,
+  showActions: true,
+});</code></pre>
+
+    <p>引数が増えたら設定オブジェクトや責務分割を検討します。ただし、小さな関数へ過剰な抽象化を追加しないことも重要です。</p>
+
+    <h2>2. 関数とモジュール設計</h2>
+    <h3>推奨: ビジネスルールと副作用を分ける</h3>
+    <pre><code>export function calculateDiscount(order) {
+  return order.total >= 10_000 ? order.total * 0.1 : 0;
+}
+
+export async function saveOrder(order, repository) {
+  const discount = calculateDiscount(order);
+  return repository.save({ ...order, discount });
+}</code></pre>
+
+    <p>計算ロジックは純粋関数としてテストし、通信や保存は境界へ寄せます。依存を引数で受け取ると、差し替えとテストが容易になります。</p>
+
+    <h3>アンチパターン: 巨大な万能関数</h3>
+    <pre><code>async function submitOrder() {
+  // DOM取得、入力検証、金額計算、API通信、
+  // Storage更新、画面遷移、通知、ログ送信をすべて行う
+}</code></pre>
+
+    <p>行数だけで分割するのではなく、変更理由が異なる処理を分けます。小さな関数を多数呼んでも、同じタスク内で重い処理をすれば性能は改善しない点にも注意します。</p>
+
+    <h3>アンチパターン: 早すぎる共通化</h3>
+    <p>似ている2つの処理をすぐ共通化すると、後から異なる要件を大量の条件分岐で吸収することになります。重複の意味と変化方向が分かってから抽象化します。</p>
+
+    <h2>3. 非同期処理</h2>
+    <h3>推奨: Promiseの所有者と失敗処理を明確にする</h3>
+    <pre><code>async function loadProfile(id, { signal }) {
+  const response = await fetch(`/api/users/${encodeURIComponent(id)}`, { signal });
+
+  if (!response.ok) {
+    throw new Error(`Profile request failed: ${response.status}`);
+  }
+
+  return response.json();
+}</code></pre>
+
+    <p>呼び出し側は、成功、ユーザー向けエラー、キャンセル、再試行のどれを担当するか決めます。<code>fetch()</code>はHTTPエラーだけではrejectしないため、ステータス確認が必要です。</p>
+
+    <h3>アンチパターン: Floating Promise</h3>
+    <pre><code>// 完了も失敗も待たれない
+saveSettings();
+navigateToHome();</code></pre>
+
+    <p>Promiseを返す処理を待たない場合、失敗が見えず、処理順も保証できません。意図的なバックグラウンド処理なら、失敗の記録方法を決めたうえで明示します。</p>
+
+    <pre><code>void sendAnalytics(event).catch(reportError);</code></pre>
+
+    <h3>アンチパターン: <code>forEach(async ...)</code></h3>
+    <pre><code>// forEachは各Promiseを待たない
+items.forEach(async (item) => {
+  await saveItem(item);
+});
+
+// 順番に処理する
+for (const item of items) {
+  await saveItem(item);
+}
+
+// 独立しており、同時実行してよい
+await Promise.all(items.map(saveItem));</code></pre>
+
+    <p>直列・並列・同時実行数制限のどれが必要か、API負荷や処理順の要件から選びます。</p>
+
+    <h3>アンチパターン: 古いリクエストの結果で上書きする</h3>
+    <p>検索や画面遷移では、先に開始した処理が後から完了する競合が起きます。<code>AbortController</code>で不要な処理を止めるか、リクエストIDで最新結果だけを反映します。</p>
+
+    <h2>4. エラーハンドリング</h2>
+    <h3>推奨: 回復できる場所で処理する</h3>
+    <pre><code>try {
+  const user = await loadUser(id);
+  renderUser(user);
+} catch (error) {
+  reportError(error);
+  renderError("ユーザー情報を取得できませんでした");
+}</code></pre>
+
+    <p>低レイヤーは意味のある文脈を付けてthrowし、UI境界やジョブ境界など、回復方針を決められる場所で処理します。</p>
+
+    <h3>アンチパターン: 例外を握りつぶす</h3>
+    <pre><code>try {
+  await saveOrder(order);
+} catch {
+  // 何もしない
+}</code></pre>
+
+    <p>利用者には成功したように見え、監視にも残りません。無視してよい例外なら、なぜ安全かを明確にし、必要に応じて記録します。</p>
+
+    <h3>アンチパターン: すべてを例外にする</h3>
+    <p>ユーザーの入力不足や検索結果0件など、想定内の結果まで例外にすると制御フローが読みにくくなります。期待される分岐は結果型や明示的な戻り値で表し、予期しない失敗と区別します。</p>
+
+    <h2>5. DOMとセキュリティ</h2>
+    <h3>推奨: 外部入力をデータとして扱う</h3>
+    <pre><code>const message = document.createElement("p");
+message.textContent = apiResponse.message;
+container.replaceChildren(message);</code></pre>
+
+    <h3>アンチパターン: 外部入力をHTMLとして実行可能にする</h3>
+    <pre><code>// XSSにつながる
+container.innerHTML = apiResponse.message;</code></pre>
+
+    <p>HTMLを許可する要件がある場合は、許可範囲を限定し、実績あるサニタイザー、Content Security Policy、Trusted Typesなどを使います。自作の文字列置換だけでHTMLを安全化しないでください。</p>
+
+    <h3>アンチパターン: インラインイベントと<code>eval()</code></h3>
+    <pre><code>&lt;button onclick="deleteItem('123')"&gt;削除&lt;/button&gt;
+
+eval(userProvidedCode);</code></pre>
+
+    <p>HTMLと動作が密結合になり、CSP導入や静的解析を難しくします。イベントは<code>addEventListener()</code>で登録し、文字列をコードとして実行しません。</p>
+
+    <h2>6. 性能</h2>
+    <h3>推奨: 送る量と実行する量を減らす</h3>
+    <ul>
+      <li>初期表示に不要な機能はdynamic importで遅延読み込みする。</li>
+      <li>HTMLやCSSで解決できる機能をJavaScriptで再実装しない。</li>
+      <li>重い処理は計測し、必要に応じて分割、遅延、Web Workerへの移動を行う。</li>
+      <li>イベントハンドラ内では、利用者へ必要な反応を先に表示する。</li>
+    </ul>
+
+    <h3>アンチパターン: 長い同期処理でメインスレッドを塞ぐ</h3>
+    <p>ブラウザのメインスレッドは基本的に1度に1つのタスクを処理します。50msを超えるタスクはlong taskとして扱われ、入力への応答を遅らせます。処理量を減らし、必要ならタスクを分割します。</p>
+
+    <h3>アンチパターン: レイアウトスラッシング</h3>
+    <pre><code>// 読み取りと書き込みを交互に行い、再レイアウトを繰り返す
+items.forEach((item) => {
+  const height = item.offsetHeight;
+  item.style.height = `${height + 10}px`;
+});</code></pre>
+
+    <p>DOMの読み取りをまとめ、その後に書き込みをまとめます。ただし、最適化前にPerformance panelなどでボトルネックを確認します。</p>
+
+    <h3>アンチパターン: 推測によるマイクロ最適化</h3>
+    <p>可読性を犠牲にした小さな高速化より、不要な通信、巨大な依存、長いタスク、過剰なDOM更新を先に改善します。性能判断には実ユーザー環境の計測が必要です。</p>
+
+    <h2>7. データとAPI境界</h2>
+    <h3>推奨: 外部入力を実行時に検証する</h3>
+    <pre><code>function parseUser(value) {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    typeof value.id !== "string" ||
+    typeof value.name !== "string"
+  ) {
+    throw new TypeError("Invalid user response");
+  }
+
+  return value;
+}</code></pre>
+
+    <p>TypeScriptの型は実行時には消えます。API、Storage、URL、フォーム、<code>postMessage</code>など、信頼境界を越える値は実行時に検証します。</p>
+
+    <h3>アンチパターン: JSONの形を無条件に信頼する</h3>
+    <pre><code>const user = await response.json();
+renderUser(user.profile.name);</code></pre>
+
+    <p>API変更や異常データで深い場所から例外が発生し、原因が分かりにくくなります。境界で検証し、内部では検証済みデータを扱います。</p>
+
+    <h2>8. テストと保守</h2>
+    <h3>推奨: 契約と重要な振る舞いをテストする</h3>
+    <ul>
+      <li>純粋関数は入力・出力と境界値をUnit Testで確認する。</li>
+      <li>通信・DOM・Storageとの連携はIntegration Testで確認する。</li>
+      <li>重要なユーザーフローはE2E Testで確認する。</li>
+      <li>Formatter、Lint、型チェック、テストをCIで実行する。</li>
+    </ul>
+
+    <h3>アンチパターン: 実装詳細だけを固定するテスト</h3>
+    <p>内部関数の呼び出し回数やDOM構造の細部だけに依存すると、安全なリファクタリングでもテストが壊れます。利用者から見える振る舞いと公開契約を優先します。</p>
+
+    <h3>アンチパターン: テストしにくさを放置する</h3>
+    <p>テストが困難なのは、巨大な副作用、暗黙依存、責務混在の兆候であることが多いです。モックを大量に増やす前に設計境界を見直します。</p>
+
+    <h2>レビューで使える質問</h2>
+    <table>
+      <thead><tr><th>観点</th><th>確認する質問</th></tr></thead>
+      <tbody>
+        <tr><td>責務</td><td>この変更理由は1つか。副作用とロジックを分けられるか。</td></tr>
+        <tr><td>状態</td><td>誰が所有し、誰が変更でき、いつ破棄されるか。</td></tr>
+        <tr><td>非同期</td><td>失敗、キャンセル、順序逆転、重複実行をどう扱うか。</td></tr>
+        <tr><td>境界</td><td>外部入力をどこで検証し、内部の契約へ変換するか。</td></tr>
+        <tr><td>安全性</td><td>信頼できない値がHTML・URL・コードとして解釈されないか。</td></tr>
+        <tr><td>性能</td><td>ボトルネックは計測済みか。初期表示に本当に必要か。</td></tr>
+        <tr><td>テスト</td><td>重要な振る舞いと失敗条件を再現できるか。</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>実務上の結論</strong>
+      <p>最も危険なアンチパターンは、コードが動くことだけを確認し、失敗時・変更時・負荷時の振る舞いを設計しないことです。ベストプラクティスは、暗黙のものを明示し、問題を小さい境界で検出できるようにするために使います。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises">Using promises</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Control_flow_and_error_handling">Control flow and error handling</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/AbortController">AbortController</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://web.dev/articles/optimize-long-tasks">Optimize long tasks</a> — web.dev、確認日: 2026-06-15</li>
+      <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html">DOM based XSS Prevention Cheat Sheet</a> — OWASP、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API">Trusted Types API</a> — MDN Web Docs、確認日: 2026-06-15</li>
+    </ul>
+  </main>
+</body>
+</html>
