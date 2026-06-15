@@ -3,21 +3,227 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="JavaScript実装のベストプラクティスとアンチパターンを、設計、非同期処理、DOM、安全性、性能、テストの観点から対比">
-  <title>JavaScriptのベストプラクティスとアンチパターン | Technical Notes</title>
+  <meta name="description" content="var、==、arguments、XHRなど、JavaScriptで昔は一般的だった書き方と現在推奨される置き換えを具体例で解説">
+  <title>JavaScriptの今使う書き方・避けたい書き方 | Technical Notes</title>
   <link rel="stylesheet" href="../../styles/site.css">
 </head>
 <body>
   <main class="page-shell article">
     <nav><a href="../../">← ノート一覧へ</a></nav>
     <p class="eyebrow">Frontend · 2026-06-15</p>
-    <h1>JavaScriptのベストプラクティスとアンチパターン</h1>
-    <p class="lead">読みやすい構文集ではなく、変更時の事故、非同期の競合、性能劣化、セキュリティ問題を減らすための設計判断を、良い例と悪い例で整理します。</p>
+    <h1>JavaScriptの今使う書き方・避けたい書き方</h1>
+    <p class="lead"><code>var</code>、<code>==</code>、<code>arguments</code>、XHRなど、昔は一般的だった書き方を、現在のJavaScriptでどう置き換えるか具体的に整理します。</p>
 
     <div class="callout">
       <strong>30秒でわかる答え</strong>
-      <p>良いJavaScript実装は、状態・依存・副作用・失敗条件が見えるコードです。アンチパターンは、短期的には便利でも、それらを暗黙化して変更影響を読めなくします。ベストプラクティスは絶対規則ではなく、要件・対象環境・計測結果に合わせて選びます。</p>
+      <p>新規実装では、変数は原則<code>const</code>、再代入が必要なら<code>let</code>、<code>var</code>は使わない。比較は原則<code>===</code>、モジュールはES Modules、非同期処理はPromiseと<code>async</code>/<code>await</code>を使います。ただし、既存コードの機械的な全置換は避けます。</p>
     </div>
+
+    <h2>最初に見る結論一覧</h2>
+    <table>
+      <thead><tr><th>昔よく使われたもの</th><th>現在の基本</th><th>理由・例外</th></tr></thead>
+      <tbody>
+        <tr><td><code>var</code></td><td><code>const</code>、必要時のみ<code>let</code></td><td><code>var</code>は関数スコープ・再宣言・巻き上げが事故につながる</td></tr>
+        <tr><td><code>==</code> / <code>!=</code></td><td><code>===</code> / <code>!==</code></td><td>暗黙の型変換を避ける。<code>value == null</code>を意図的に使う流儀はある</td></tr>
+        <tr><td><code>function () {}</code>をすべてに使う</td><td>用途で通常関数とアロー関数を使い分ける</td><td><code>this</code>が必要なメソッド・constructorにはアロー関数を使わない</td></tr>
+        <tr><td><code>arguments</code></td><td>Rest parameters <code>...args</code></td><td>本物の配列として扱え、引数の意図も明確</td></tr>
+        <tr><td>IIFEでスコープを作る</td><td>ES Modules、ブロックスコープ</td><td>即時実行そのものが必要ならIIFEも利用可能</td></tr>
+        <tr><td>コールバックのネスト</td><td>Promise、<code>async</code>/<code>await</code></td><td>イベント通知など、コールバックが自然な用途は残る</td></tr>
+        <tr><td><code>XMLHttpRequest</code></td><td><code>fetch()</code></td><td>アップロード進捗などXHRが必要な場合もある</td></tr>
+        <tr><td><code>obj.hasOwnProperty(key)</code></td><td><code>Object.hasOwn(obj, key)</code></td><td>独自プロパティで上書きされたオブジェクトにも安全</td></tr>
+        <tr><td><code>typeof value === "object"</code>で配列判定</td><td><code>Array.isArray(value)</code></td><td>配列も<code>null</code>も<code>typeof</code>ではobject</td></tr>
+        <tr><td><code>JSON.parse(JSON.stringify(value))</code>でコピー</td><td><code>structuredClone(value)</code></td><td>JSON方式はDate、循環参照、undefinedなどを壊す</td></tr>
+        <tr><td><code>value || defaultValue</code></td><td><code>value ?? defaultValue</code></td><td><code>0</code>や空文字を有効値として残したい場合</td></tr>
+        <tr><td><code>obj &amp;&amp; obj.child &amp;&amp; ...</code></td><td>Optional chaining <code>obj?.child</code></td><td>必須値の欠損まで隠さない</td></tr>
+        <tr><td><code>for...in</code>で配列を走査</td><td><code>for...of</code>、配列メソッド</td><td><code>for...in</code>は列挙可能なプロパティ名の走査用</td></tr>
+        <tr><td><code>escape()</code> / <code>unescape()</code></td><td><code>encodeURIComponent()</code> / <code>decodeURIComponent()</code></td><td><code>escape</code>系は非推奨</td></tr>
+        <tr><td><code>substr()</code></td><td><code>slice()</code>、<code>substring()</code></td><td><code>substr()</code>はlegacy扱い</td></tr>
+        <tr><td><code>document.write()</code>、<code>eval()</code>、<code>with</code></td><td>使用しない</td><td>安全性、最適化、可読性に重大な問題</td></tr>
+      </tbody>
+    </table>
+
+    <h2>変数宣言: <code>const</code>を基本にする</h2>
+    <h3>今の基本</h3>
+    <pre><code>const userId = "u-123";
+const users = [];
+
+let currentPage = 1;
+currentPage += 1;</code></pre>
+
+    <ul>
+      <li><code>const</code>: 変数へ別の値を再代入しない場合。原則これを使う。</li>
+      <li><code>let</code>: ループカウンターや状態遷移など、再代入が本当に必要な場合。</li>
+      <li><code>var</code>: 新規実装では基本的に使わない。</li>
+    </ul>
+
+    <p><code>const</code>は値を不変にする修飾子ではなく、変数への<strong>再代入</strong>を禁止します。オブジェクトの中身は変更できます。</p>
+
+    <pre><code>const settings = { theme: "light" };
+settings.theme = "dark"; // 可能
+
+settings = {}; // TypeError</code></pre>
+
+    <h3><code>var</code>を避ける具体的な理由</h3>
+    <pre><code>if (isEnabled) {
+  var message = "enabled";
+}
+
+console.log(message); // ブロック外でも参照できる</code></pre>
+
+    <p><code>var</code>はブロックスコープではなく関数スコープです。さらに同じスコープで再宣言でき、宣言が巻き上げられるため、意図しない<code>undefined</code>や上書きを生みやすくなります。</p>
+
+    <pre><code>console.log(count); // undefined
+var count = 1;
+
+var count = 2; // 再宣言してもエラーにならない</code></pre>
+
+    <h2>比較: 原則として<code>===</code>を使う</h2>
+    <pre><code>0 == false;   // true
+"" == false;  // true
+"1" == 1;    // true
+
+0 === false;  // false
+"1" === 1;   // false</code></pre>
+
+    <p><code>==</code>は比較前に型変換するため、入力値の型が曖昧なコードでは予想外の一致が起きます。まず入力を明示的に変換・検証し、<code>===</code>で比較します。</p>
+
+    <pre><code>const page = Number(searchParams.get("page"));
+
+if (!Number.isInteger(page) || page &lt; 1) {
+  throw new TypeError("Invalid page");
+}</code></pre>
+
+    <p>例外として、<code>value == null</code>は<code>null</code>と<code>undefined</code>の両方だけに一致します。チーム規約で意図を共有できる場合に限り使う選択肢があります。</p>
+
+    <h2>関数: アロー関数へ全部置換しない</h2>
+    <table>
+      <thead><tr><th>用途</th><th>基本の選択</th></tr></thead>
+      <tbody>
+        <tr><td>短いコールバック</td><td>アロー関数</td></tr>
+        <tr><td>レキシカルな<code>this</code>を使いたい</td><td>アロー関数</td></tr>
+        <tr><td>オブジェクトのメソッド</td><td>メソッド短縮構文</td></tr>
+        <tr><td>constructorとして<code>new</code>で呼ぶ</td><td>classまたは通常関数</td></tr>
+        <tr><td>宣言より前から呼びたい主要関数</td><td>関数宣言を検討</td></tr>
+      </tbody>
+    </table>
+
+    <pre><code>const doubled = numbers.map((number) => number * 2);
+
+const user = {
+  name: "Alice",
+  greet() {
+    return `Hello, ${this.name}`;
+  },
+};</code></pre>
+
+    <p>アロー関数は独自の<code>this</code>・<code>arguments</code>を持たず、constructorとして使えません。すべてをアロー関数へ変えるのは別のアンチパターンです。</p>
+
+    <h2><code>arguments</code>よりRest parameters</h2>
+    <pre><code>// 昔の書き方
+function sum() {
+  return Array.prototype.reduce.call(arguments, (total, value) => total + value, 0);
+}
+
+// 現在の基本
+function sum(...values) {
+  return values.reduce((total, value) => total + value, 0);
+}</code></pre>
+
+    <p><code>arguments</code>は配列のように見えますが本物の配列ではありません。<code>...values</code>はArrayなので、<code>map()</code>や<code>reduce()</code>を直接使えます。</p>
+
+    <h2>オブジェクト・配列判定</h2>
+    <pre><code>// 避けたい
+value.hasOwnProperty("id");
+typeof value === "object"; // 配列判定には使えない
+
+// 推奨
+Object.hasOwn(value, "id");
+Array.isArray(value);</code></pre>
+
+    <p><code>hasOwnProperty</code>は対象オブジェクトに同名プロパティがある場合や、プロトタイプを持たないオブジェクトで問題になります。<code>Object.hasOwn()</code>はその影響を受けません。</p>
+
+    <h2>ループ: 目的で選ぶ</h2>
+    <table>
+      <thead><tr><th>目的</th><th>使うもの</th></tr></thead>
+      <tbody>
+        <tr><td>配列の値を順番に処理し、<code>await</code>や<code>break</code>を使う</td><td><code>for...of</code></td></tr>
+        <tr><td>各要素を別の値へ変換する</td><td><code>map()</code></td></tr>
+        <tr><td>条件に合う要素だけ残す</td><td><code>filter()</code></td></tr>
+        <tr><td>最初の一致を探す</td><td><code>find()</code></td></tr>
+        <tr><td>オブジェクトの列挙可能プロパティ名を走査する</td><td><code>for...in</code></td></tr>
+      </tbody>
+    </table>
+
+    <pre><code>// 配列へfor...inは避ける
+for (const index in users) {
+  console.log(users[index]);
+}
+
+// 値を走査する
+for (const user of users) {
+  console.log(user);
+}</code></pre>
+
+    <h2>昔の非同期処理からの置き換え</h2>
+    <h3>コールバックのネスト → Promise / async・await</h3>
+    <pre><code>// 読みにくくなりやすい
+getUser(id, (userError, user) => {
+  if (userError) return handleError(userError);
+
+  getOrders(user.id, (orderError, orders) => {
+    if (orderError) return handleError(orderError);
+    renderOrders(orders);
+  });
+});
+
+// 現在の基本
+try {
+  const user = await getUser(id);
+  const orders = await getOrders(user.id);
+  renderOrders(orders);
+} catch (error) {
+  handleError(error);
+}</code></pre>
+
+    <h3>XHR → Fetch API</h3>
+    <pre><code>const response = await fetch("/api/users", {
+  headers: { Accept: "application/json" },
+});
+
+if (!response.ok) {
+  throw new Error(`Request failed: ${response.status}`);
+}
+
+const users = await response.json();</code></pre>
+
+    <p>FetchはHTTP 404・500だけではrejectしません。必ず<code>response.ok</code>などを確認します。アップロード進捗など、Fetchで満たせない要件ではXHRが残る場合があります。</p>
+
+    <h2>使わない・置き換えるべきLegacy API</h2>
+    <table>
+      <thead><tr><th>避けるもの</th><th>置き換え</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td><code>eval()</code>、<code>new Function()</code></td><td>データをコードとして実行しない設計</td><td>コード注入、CSP阻害、最適化阻害</td></tr>
+        <tr><td><code>document.write()</code></td><td>DOM API、テンプレート、フレームワーク</td><td>ページ内容を破壊し、読み込みを阻害する</td></tr>
+        <tr><td><code>with</code></td><td>変数・プロパティを明示する</td><td>識別子の参照先が不明確。strict modeでは禁止</td></tr>
+        <tr><td><code>escape()</code> / <code>unescape()</code></td><td><code>encodeURIComponent()</code> / <code>decodeURIComponent()</code></td><td>非推奨でUnicodeやURL用途に不適切</td></tr>
+        <tr><td><code>substr()</code></td><td><code>slice()</code>、必要に応じて<code>substring()</code></td><td>legacy扱いで、挙動差が分かりにくい</td></tr>
+        <tr><td><code>__proto__</code></td><td><code>Object.getPrototypeOf()</code> / <code>Object.setPrototypeOf()</code></td><td>legacy accessor。通常はprototype操作自体を避ける</td></tr>
+        <tr><td><code>Object.prototype</code>など標準prototypeの拡張</td><td>通常関数、独自class、utility module</td><td>名前衝突と全コードへの副作用</td></tr>
+      </tbody>
+    </table>
+
+    <h2>便利だが使い分けが必要なもの</h2>
+    <table>
+      <thead><tr><th>機能</th><th>良い用途</th><th>注意点</th></tr></thead>
+      <tbody>
+        <tr><td><code>?.</code></td><td>本当に任意のプロパティへアクセス</td><td>必須値の欠損まで隠さない</td></tr>
+        <tr><td><code>??</code></td><td><code>null</code>・<code>undefined</code>だけを既定値へ変換</td><td>空文字や0も欠損扱いしたいなら要件を明示</td></tr>
+        <tr><td>Destructuring</td><td>使う値を明示して取り出す</td><td>深い分割や大量の別名は読みにくい</td></tr>
+        <tr><td>Spread syntax</td><td>浅いコピー・追加・結合</td><td>深いコピーではない。巨大配列の関数引数展開にも注意</td></tr>
+        <tr><td>Class</td><td>状態と振る舞いを持つ明確なモデル</td><td>単純なデータ変換までclass化しない</td></tr>
+        <tr><td>Private fields <code>#value</code></td><td>実行時にも内部状態を隠したい</td><td>テストや継承設計との相性を検討</td></tr>
+      </tbody>
+    </table>
 
     <h2>「ベストエフォート」と「ベストプラクティス」</h2>
     <p>一般に実装指針を指す言葉は<strong>ベストプラクティス</strong>です。ベストエフォートは「可能な範囲で最大限努力するが、結果は保証しない」という意味で、通信品質やサービス提供条件などで使われます。</p>
@@ -272,6 +478,13 @@ renderUser(user.profile.name);</code></pre>
 
     <h2>参照元</h2>
     <ul>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/var">var</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let">let</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const">const</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality">Strict equality</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters">Rest parameters</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwn">Object.hasOwn()</a> — MDN Web Docs、確認日: 2026-06-15</li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Deprecated_and_obsolete_features">Deprecated and obsolete JavaScript features</a> — MDN Web Docs、確認日: 2026-06-15</li>
       <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises">Using promises</a> — MDN Web Docs、確認日: 2026-06-15</li>
       <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Control_flow_and_error_handling">Control flow and error handling</a> — MDN Web Docs、確認日: 2026-06-15</li>
       <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/AbortController">AbortController</a> — MDN Web Docs、確認日: 2026-06-15</li>
