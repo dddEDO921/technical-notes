@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="自然モチーフの配色・デザインシステム集 Morphos / Morphous を実際に使うための手順、使い分け、注意点">
+  <title>Morphos / Morphousを迷わず使う | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">AI Development · 2026-06-16</p>
+    <h1>Morphos / Morphousを迷わず使う</h1>
+    <p class="lead">自然界のモチーフから作られた配色・デザインシステムを、AIへの指示、Web実装、PowerPoint、Wordへ流用するための実践手順。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>このサイトは「色どうしよう」を減らすための自然モチーフ配色集です。まずモチーフを選び、用途に合わせてPrompt用テキスト、CSS変数、PowerPoint、Wordのいずれかを使います。AIにUIを作らせるときは、色名ではなく具体的なカラーコードと役割を渡すのがポイントです。</p>
+    </div>
+
+    <h2>名前について</h2>
+    <p>Qiita記事では主に<strong>Morphos</strong>と書かれています。一方、公開サイトのタイトルやGitHub READMEでは<strong>Morphous</strong>表記も使われています。このノートでは、迷わないように<strong>Morphos / Morphous</strong>と併記します。</p>
+
+    <h2>これは何のサイトか</h2>
+    <p>Morphos / Morphousは、動物、植物、鉱物、天候、風景などの自然モチーフから作られた配色・デザインシステムのコレクションです。公開サイトでは、各システムが8つの色役割、light/darkのshadcnテーマ、PowerPoint・Wordテンプレートなどを持つと説明されています。</p>
+
+    <div class="diagram" aria-label="Morphosの使い方">
+      <div>1. モチーフを選ぶ<br><small>動物・植物・鉱物など</small></div>
+      <div>2. 用途を選ぶ<br><small>AI / CSS / PPT / Word</small></div>
+      <div>3. 貼る・組み込む<br><small>色決めの時間を減らす</small></div>
+    </div>
+
+    <h2>まず開く場所</h2>
+    <table>
+      <thead><tr><th>目的</th><th>見る場所</th></tr></thead>
+      <tbody>
+        <tr><td>配色を探して使う</td><td><a href="https://morphos.ameyanagi.com/">Morphos / Morphous本体サイト</a></td></tr>
+        <tr><td>実装や生成パイプラインを見る</td><td><a href="https://github.com/Ameyanagi/morphos">GitHubリポジトリ</a></td></tr>
+        <tr><td>背景や作者の意図を読む</td><td><a href="https://qiita.com/Ameyanagi/items/fd31a46683bba8bf55b7">Qiita記事</a></td></tr>
+      </tbody>
+    </table>
+
+    <h2>何を選べばよいか</h2>
+    <p>最初は色名や流行で選ぶより、成果物の用途から逆算します。</p>
+
+    <table>
+      <thead><tr><th>作りたいもの</th><th>選び方</th><th>避けたい選び方</th></tr></thead>
+      <tbody>
+        <tr><td>業務アプリ</td><td>背景・文字・Primaryのコントラストが読みやすいもの</td><td>見た目の派手さだけで選ぶ</td></tr>
+        <tr><td>LP・ポートフォリオ</td><td>印象が強く、AccentやSignalが映えるもの</td><td>本文の可読性を後回しにする</td></tr>
+        <tr><td>提案資料</td><td>落ち着いた背景と強調色が分かりやすいもの</td><td>全スライドを高彩度にする</td></tr>
+        <tr><td>仕様書・社内文書</td><td>長文でも疲れにくいトーン</td><td>装飾色を本文色に使う</td></tr>
+        <tr><td>AIでUI生成</td><td>モチーフ名、色役割、カラーコードが揃っているもの</td><td>「いい感じ」「青系」だけで依頼する</td></tr>
+      </tbody>
+    </table>
+
+    <h2>使える形式</h2>
+    <table>
+      <thead><tr><th>形式</th><th>用途</th><th>使いどころ</th></tr></thead>
+      <tbody>
+        <tr><td>AI用カラーパレット</td><td>ChatGPT、Claude、Codexなどへの指示</td><td>UI生成や資料デザインの方向性を具体化する</td></tr>
+        <tr><td>CSS変数 / theme.css</td><td>Webサイト、React、shadcn/ui、tweakcn</td><td>デザインシステムのトークンとして組み込む</td></tr>
+        <tr><td>PowerPointテンプレート</td><td>提案資料、社内資料</td><td>資料作成時の色決めを短縮する</td></tr>
+        <tr><td>Wordテンプレート</td><td>仕様書、レポート、社内文書</td><td>文書のトーンを整える</td></tr>
+        <tr><td>GitHub上のデータ</td><td>自作ツールや別テーマへの応用</td><td>生成パイプラインやプロンプトを参考にする</td></tr>
+      </tbody>
+    </table>
+
+    <h2>AIにUIを作らせるとき</h2>
+    <h3>手順</h3>
+    <ol>
+      <li>サイトで雰囲気に合うモチーフを選ぶ。</li>
+      <li>AI用カラーパレット、または色役割とカラーコードをコピーする。</li>
+      <li>作りたいUIの目的、対象ユーザー、制約を一緒に渡す。</li>
+      <li>「この配色を使う。ただし可読性とコントラストを優先」と明記する。</li>
+      <li>生成結果を見て、Primary、Accent、Background、Inkの使い方を調整する。</li>
+    </ol>
+
+    <h3>そのまま使えるプロンプト</h3>
+    <pre><code>以下の自然モチーフのカラーパレットを使って、
+SaaS管理画面のダッシュボードUIを設計してください。
+
+条件:
+- 背景と本文の可読性を最優先
+- Primaryは主要CTAに限定
+- Accentはグラフや補助情報に使う
+- Signalは警告・成功・注意など状態表現に使う
+- Tailwind / CSS変数で実装しやすい形にする
+
+カラーパレット:
+[ここにMorphos / MorphousのPrompt-ready paletteを貼る]</code></pre>
+
+    <h2>WebサイトやReactに組み込むとき</h2>
+    <h3>手順</h3>
+    <ol>
+      <li>使いたいシステムの<code>theme.css</code>またはCSS変数を取得する。</li>
+      <li>プロジェクトのグローバルCSSへ追加する。</li>
+      <li>既存の色トークンと衝突しないか確認する。</li>
+      <li>Button、Card、Form、Alertなど主要コンポーネントに適用する。</li>
+      <li>light/darkの両方で可読性を確認する。</li>
+    </ol>
+
+    <pre><code>/* 例: 取得したCSS変数をテーマとして読み込む */
+@import "./themes/morphos-theme.css";
+
+.primary-button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}</code></pre>
+
+    <h3>shadcn/uiで見るポイント</h3>
+    <ul>
+      <li><code>background</code>と<code>foreground</code>のコントラスト。</li>
+      <li><code>primary</code>を多用しすぎて画面がうるさくならないか。</li>
+      <li><code>muted</code>、<code>border</code>、<code>card</code>が自然に見えるか。</li>
+      <li>dark modeでAccentやSignalが沈みすぎないか。</li>
+      <li>既存ブランドカラーがある場合、置き換えではなく補助テーマとして使うか。</li>
+    </ul>
+
+    <h2>PowerPointで使うとき</h2>
+    <ol>
+      <li>目的に近いモチーフを選ぶ。提案資料なら落ち着いたものを選ぶ。</li>
+      <li>PowerPointテンプレートをダウンロードする。</li>
+      <li>表紙、見出し、強調、図解、注意書きの色を確認する。</li>
+      <li>会社指定テンプレートがある場合は、色だけ転用できるか確認する。</li>
+      <li>印刷・プロジェクター表示で読めるか確認する。</li>
+    </ol>
+
+    <p>資料では、配色の統一よりも読みやすさが優先です。自然モチーフの色を全部使おうとせず、背景、本文、強調の3系統から始めると崩れにくくなります。</p>
+
+    <h2>Word・仕様書で使うとき</h2>
+    <ol>
+      <li>長文で疲れにくいトーンのモチーフを選ぶ。</li>
+      <li>Wordテンプレートをダウンロードする。</li>
+      <li>表紙、見出し、罫線、注記、表の色だけに限定して使う。</li>
+      <li>本文色は原則として濃いInk系にする。</li>
+      <li>PDF化して見え方を確認する。</li>
+    </ol>
+
+    <p>仕様書では、Accentを本文色に使うと読みにくくなります。強調したい見出しや図表の補助色に限定します。</p>
+
+    <h2>迷ったときの判断表</h2>
+    <table>
+      <thead><tr><th>迷い</th><th>判断</th></tr></thead>
+      <tbody>
+        <tr><td>どのモチーフを選ぶべき？</td><td>成果物の印象より先に、本文の可読性とPrimaryの見やすさで選ぶ</td></tr>
+        <tr><td>AIに何を貼ればよい？</td><td>モチーフ名、色役割、カラーコード、用途、制約をまとめて渡す</td></tr>
+        <tr><td>CSSをそのまま入れてよい？</td><td>小規模なら試してよい。既存プロダクトではトークン名の衝突を確認する</td></tr>
+        <tr><td>全色を使うべき？</td><td>使わない。背景、本文、Primary、Accentから始める</td></tr>
+        <tr><td>ブランドカラーと混ぜてよい？</td><td>混ぜてよいが、Primaryをどちらにするか決める</td></tr>
+        <tr><td>資料に使って浮かない？</td><td>背景と本文は控えめにし、自然モチーフ色は見出し・図表・強調に使う</td></tr>
+      </tbody>
+    </table>
+
+    <h2>できること</h2>
+    <ul>
+      <li>AIへの曖昧な色指定を、具体的なカラーコードと役割へ変換できる。</li>
+      <li>Web UIのテーマ案を短時間で作れる。</li>
+      <li>shadcn/uiやtweakcn向けのテーマ調整に使える。</li>
+      <li>PowerPointやWordの色決めを短縮できる。</li>
+      <li>自然モチーフを起点に、ブランドや個人開発の方向性を探れる。</li>
+      <li>GitHubの公開データやプロンプトを参考に、自分用の配色コレクションを作れる。</li>
+    </ul>
+
+    <h2>注意点</h2>
+    <ul>
+      <li>自然由来の配色でも、UIとして常に読みやすいとは限らない。</li>
+      <li>コントラスト、hover、focus、disabled、errorなど状態ごとの確認が必要。</li>
+      <li>色だけで意味を伝えない。アイコン、テキスト、形状も併用する。</li>
+      <li>既存ブランドがあるプロダクトでは、全面置き換えより一部適用から始める。</li>
+      <li>PowerPoint・Wordテンプレートはサイト側で開発中の要素もあるため、最終成果物は必ず目視確認する。</li>
+      <li>公開GitHubのライセンスや利用条件を確認してから商用・再配布に使う。</li>
+    </ul>
+
+    <h2>自分の作業に落とすなら</h2>
+    <pre><code>1. Morphos / Morphousで3候補を選ぶ
+2. AIに同じUIを3配色で作らせる
+3. 一覧画面・詳細画面・フォーム・エラー表示を確認する
+4. 最も読みやすい1案を残す
+5. CSS変数をプロジェクトのtheme層へ取り込む
+6. Button、Alert、Cardなどから段階的に適用する</code></pre>
+
+    <div class="callout">
+      <strong>実務上の結論</strong>
+      <p>Morphos / Morphousは、デザイナーの代替ではなく、色決めの初速を上げる道具です。最初の配色案を自然モチーフから借り、AIやCSSに渡せる形式へ変換し、最後は可読性・アクセシビリティ・ブランド適合で人間が判断します。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://qiita.com/Ameyanagi/items/fd31a46683bba8bf55b7">配色に悩む時間をゼロに。自然界モチーフのデザインシステム集「Morphos」を作りました</a> — Qiita、確認日: 2026-06-16</li>
+      <li><a href="https://morphos.ameyanagi.com/">Morphous - Nature-driven design systems</a> — morphos.ameyanagi.com、確認日: 2026-06-16</li>
+      <li><a href="https://github.com/Ameyanagi/morphos">Ameyanagi/morphos</a> — GitHub、確認日: 2026-06-16</li>
+    </ul>
+  </main>
+</body>
+</html>
