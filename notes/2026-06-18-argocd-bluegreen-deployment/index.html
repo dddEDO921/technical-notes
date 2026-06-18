@@ -118,6 +118,97 @@
       <li><code>scaleDownDelaySeconds</code>後に旧ReplicaSet v1を縮退する。</li>
     </ol>
 
+    <h2>切り替え時に何が起きているか</h2>
+    <p>Blue-Greenで一番重要なのは、Podそのものを差し替えるのではなく、<code>Service</code>のselectorが向くReplicaSetを切り替えることです。以下は、各段階で<code>activeService</code>と<code>previewService</code>がどこを向いているかを示した図です。</p>
+
+    <figure class="architecture-figure" aria-label="Blue-Greenデプロイの段階別切り替え図">
+      <svg viewBox="0 0 1120 980" role="img" aria-labelledby="bluegreen-steps-title bluegreen-steps-desc">
+        <title id="bluegreen-steps-title">Blue-Greenデプロイの段階別切り替え図</title>
+        <desc id="bluegreen-steps-desc">安定状態、プレビュー中、Promote時、旧ReplicaSet縮退後に、activeServiceとpreviewServiceがどのReplicaSetを指すかを示す図。</desc>
+        <defs>
+          <marker id="arrowhead-step" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+            <polygon points="0 0, 10 4, 0 8" fill="#5f625d"></polygon>
+          </marker>
+        </defs>
+
+        <text x="560" y="34" text-anchor="middle" font-size="22" font-weight="800">Service selectorの切り替えで見るBlue-Green</text>
+
+        <!-- Step 1 -->
+        <rect x="36" y="64" width="1048" height="190" rx="18" fill="#fffdf8" stroke="#ddd8cc" stroke-width="2"></rect>
+        <text x="64" y="98" font-size="18" font-weight="800">1. 安定状態: activeService は旧ReplicaSet v1へ向いている</text>
+        <rect x="72" y="128" width="180" height="58" rx="12" class="node control"></rect>
+        <text x="162" y="162" text-anchor="middle" font-size="15" font-weight="800">activeService</text>
+        <rect x="416" y="110" width="230" height="92" rx="14" class="node"></rect>
+        <text x="531" y="143" text-anchor="middle" font-size="16" font-weight="800">ReplicaSet v1</text>
+        <text x="531" y="168" text-anchor="middle" font-size="13">Pod v1 / Ready</text>
+        <text x="531" y="190" text-anchor="middle" font-size="13">本番トラフィックあり</text>
+        <rect x="770" y="110" width="230" height="92" rx="14" fill="#f7f1e6" stroke="#ddd8cc" stroke-width="2"></rect>
+        <text x="885" y="143" text-anchor="middle" font-size="16" font-weight="800">ReplicaSet v2</text>
+        <text x="885" y="168" text-anchor="middle" font-size="13">まだ存在しない</text>
+        <path d="M252 157 L410 157" class="arrow" marker-end="url(#arrowhead-step)"></path>
+        <text x="328" y="146" text-anchor="middle" font-size="12">selector: v1 hash</text>
+
+        <!-- Step 2 -->
+        <rect x="36" y="284" width="1048" height="210" rx="18" fill="#fffdf8" stroke="#ddd8cc" stroke-width="2"></rect>
+        <text x="64" y="318" font-size="18" font-weight="800">2. プレビュー中: 新ReplicaSet v2を作り、previewServiceだけをv2へ向ける</text>
+        <rect x="72" y="350" width="180" height="58" rx="12" class="node control"></rect>
+        <text x="162" y="384" text-anchor="middle" font-size="15" font-weight="800">activeService</text>
+        <rect x="72" y="424" width="180" height="58" rx="12" class="node search"></rect>
+        <text x="162" y="458" text-anchor="middle" font-size="15" font-weight="800">previewService</text>
+        <rect x="416" y="344" width="230" height="92" rx="14" class="node"></rect>
+        <text x="531" y="377" text-anchor="middle" font-size="16" font-weight="800">ReplicaSet v1</text>
+        <text x="531" y="402" text-anchor="middle" font-size="13">Pod v1 / Ready</text>
+        <text x="531" y="424" text-anchor="middle" font-size="13">本番継続</text>
+        <rect x="770" y="344" width="230" height="110" rx="14" class="node ai"></rect>
+        <text x="885" y="377" text-anchor="middle" font-size="16" font-weight="800">ReplicaSet v2</text>
+        <text x="885" y="402" text-anchor="middle" font-size="13">Pod v2 起動</text>
+        <text x="885" y="424" text-anchor="middle" font-size="13">previewServiceで確認</text>
+        <text x="885" y="446" text-anchor="middle" font-size="13">本番トラフィックなし</text>
+        <path d="M252 379 L410 390" class="arrow" marker-end="url(#arrowhead-step)"></path>
+        <path d="M252 453 C410 500 650 500 770 420" class="arrow dashed" marker-end="url(#arrowhead-step)"></path>
+        <text x="328" y="368" text-anchor="middle" font-size="12">selector: v1 hash</text>
+        <text x="540" y="486" text-anchor="middle" font-size="12">selector: v2 hash / prePromotionAnalysisや手動確認</text>
+
+        <!-- Step 3 -->
+        <rect x="36" y="524" width="1048" height="210" rx="18" fill="#fffdf8" stroke="#ddd8cc" stroke-width="2"></rect>
+        <text x="64" y="558" font-size="18" font-weight="800">3. Promote時: activeServiceのselectorをv2へ切り替える</text>
+        <rect x="72" y="590" width="180" height="58" rx="12" class="node control"></rect>
+        <text x="162" y="624" text-anchor="middle" font-size="15" font-weight="800">activeService</text>
+        <rect x="72" y="664" width="180" height="58" rx="12" class="node search"></rect>
+        <text x="162" y="698" text-anchor="middle" font-size="15" font-weight="800">previewService</text>
+        <rect x="416" y="584" width="230" height="92" rx="14" fill="#f7f1e6" stroke="#ddd8cc" stroke-width="2"></rect>
+        <text x="531" y="617" text-anchor="middle" font-size="16" font-weight="800">ReplicaSet v1</text>
+        <text x="531" y="642" text-anchor="middle" font-size="13">Pod v1 / まだ残す</text>
+        <text x="531" y="664" text-anchor="middle" font-size="13">トラフィックは外れる</text>
+        <rect x="770" y="584" width="230" height="110" rx="14" class="node ai"></rect>
+        <text x="885" y="617" text-anchor="middle" font-size="16" font-weight="800">ReplicaSet v2</text>
+        <text x="885" y="642" text-anchor="middle" font-size="13">Pod v2 / Ready</text>
+        <text x="885" y="664" text-anchor="middle" font-size="13">本番トラフィック開始</text>
+        <text x="885" y="686" text-anchor="middle" font-size="13">postPromotionAnalysis対象</text>
+        <path d="M252 619 C410 560 650 560 770 630" class="arrow" marker-end="url(#arrowhead-step)"></path>
+        <path d="M252 693 C410 745 650 745 770 668" class="arrow dashed" marker-end="url(#arrowhead-step)"></path>
+        <text x="540" y="566" text-anchor="middle" font-size="12">activeService selector: v1 hash → v2 hash</text>
+        <text x="534" y="726" text-anchor="middle" font-size="12">旧Podはすぐ消さない。Service反映遅延に備える</text>
+
+        <!-- Step 4 -->
+        <rect x="36" y="764" width="1048" height="178" rx="18" fill="#fffdf8" stroke="#ddd8cc" stroke-width="2"></rect>
+        <text x="64" y="798" font-size="18" font-weight="800">4. scaleDownDelaySeconds後: 旧ReplicaSet v1を縮退する</text>
+        <rect x="72" y="830" width="180" height="58" rx="12" class="node control"></rect>
+        <text x="162" y="864" text-anchor="middle" font-size="15" font-weight="800">activeService</text>
+        <rect x="416" y="816" width="230" height="92" rx="14" fill="#f7f1e6" stroke="#ddd8cc" stroke-width="2"></rect>
+        <text x="531" y="849" text-anchor="middle" font-size="16" font-weight="800">ReplicaSet v1</text>
+        <text x="531" y="874" text-anchor="middle" font-size="13">scale down</text>
+        <text x="531" y="896" text-anchor="middle" font-size="13">必要数まで縮退</text>
+        <rect x="770" y="816" width="230" height="92" rx="14" class="node ai"></rect>
+        <text x="885" y="849" text-anchor="middle" font-size="16" font-weight="800">ReplicaSet v2</text>
+        <text x="885" y="874" text-anchor="middle" font-size="13">Stable</text>
+        <text x="885" y="896" text-anchor="middle" font-size="13">本番として稼働</text>
+        <path d="M252 859 C410 790 650 790 770 858" class="arrow" marker-end="url(#arrowhead-step)"></path>
+        <text x="548" y="806" text-anchor="middle" font-size="12">activeService selector: v2 hash</text>
+      </svg>
+      <figcaption class="figure-caption">Promote時に変わるのは主にService selectorです。旧ReplicaSetはすぐ削除せず、ノード側のService反映遅延に備えて一定時間残します。</figcaption>
+    </figure>
+
     <h2>最小イメージのManifest</h2>
     <pre><code>apiVersion: argoproj.io/v1alpha1
 kind: Rollout
