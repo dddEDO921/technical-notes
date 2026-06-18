@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Argo CDとArgo RolloutsによるBlue-Greenデプロイを、KubernetesのService、ReplicaSet、Pod、selectorの用語で解説">
+  <title>Argo CDのBlue-GreenデプロイをKubernetes用語で理解する | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Infrastructure · 2026-06-18</p>
+    <h1>Argo CDのBlue-GreenデプロイをKubernetes用語で理解する</h1>
+    <p class="lead">Argo CDでBlue-Greenデプロイを行うときの実体は、多くの場合Argo Rolloutsです。KubernetesのService、ReplicaSet、Pod、selectorの切り替えとして理解すると分かりやすい。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>Blue-Greenデプロイは、旧バージョンのPod群と新バージョンのPod群を並べておき、Serviceのselectorを旧ReplicaSetから新ReplicaSetへ切り替える方式です。Argo Rolloutsでは<code>activeService</code>が本番トラフィック、<code>previewService</code>が新バージョン確認用の入口になります。</p>
+    </div>
+
+    <h2>Argo CDだけでやるのか？</h2>
+    <p>Argo CDはGitの状態をKubernetesへ同期するGitOpsツールです。Blue-GreenやCanaryのような段階的デプロイを制御する場合は、同じArgoプロジェクトの<strong>Argo Rollouts</strong>を組み合わせるのが一般的です。</p>
+
+    <table>
+      <thead><tr><th>ツール</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td>Argo CD</td><td>Gitにある<code>Rollout</code>、<code>Service</code>、<code>Ingress</code>などのManifestをクラスタへ同期する</td></tr>
+        <tr><td>Argo Rollouts</td><td><code>Rollout</code>リソースを監視し、Blue-GreenやCanaryの進行、Service selectorの切り替え、Analysisを制御する</td></tr>
+        <tr><td>Kubernetes</td><td>ReplicaSet、Pod、Service、Ingressなどを実際に動かす</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Kubernetes用語で見る全体像</h2>
+    <p>通常の<code>Deployment</code>では、KubernetesのDeployment ControllerがReplicaSetを作ります。Argo Rolloutsでは、<code>Deployment</code>の代わりに<code>Rollout</code>リソースを使い、Rollout ControllerがReplicaSetを管理します。</p>
+
+    <figure class="architecture-figure" aria-label="Argo Rollouts Blue-Greenデプロイの関係図">
+      <svg viewBox="0 0 960 620" role="img" aria-labelledby="bluegreen-title bluegreen-desc">
+        <title id="bluegreen-title">Blue-GreenデプロイのService切り替え図</title>
+        <desc id="bluegreen-desc">activeServiceが旧ReplicaSetのPodへ本番トラフィックを送り、previewServiceが新ReplicaSetのPodへ確認用トラフィックを送る。Promote時にactiveServiceのselectorが新ReplicaSetへ切り替わる。</desc>
+        <defs>
+          <marker id="arrowhead-bg" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+            <polygon points="0 0, 10 4, 0 8" fill="#5f625d"></polygon>
+          </marker>
+        </defs>
+
+        <rect x="32" y="36" width="220" height="70" rx="14" class="node"></rect>
+        <text x="142" y="66" text-anchor="middle" font-size="17" font-weight="800">User / Ingress</text>
+        <text x="142" y="90" text-anchor="middle" font-size="13">本番アクセス</text>
+
+        <rect x="330" y="28" width="260" height="86" rx="16" class="node control"></rect>
+        <text x="460" y="62" text-anchor="middle" font-size="18" font-weight="800">activeService</text>
+        <text x="460" y="88" text-anchor="middle" font-size="13">本番トラフィック用Service</text>
+
+        <rect x="330" y="166" width="260" height="86" rx="16" class="node search"></rect>
+        <text x="460" y="200" text-anchor="middle" font-size="18" font-weight="800">previewService</text>
+        <text x="460" y="226" text-anchor="middle" font-size="13">新バージョン確認用Service</text>
+
+        <rect x="680" y="24" width="240" height="110" rx="16" class="node"></rect>
+        <text x="800" y="58" text-anchor="middle" font-size="18" font-weight="800">ReplicaSet v1</text>
+        <text x="800" y="82" text-anchor="middle" font-size="13">Blue / 旧安定版</text>
+        <text x="800" y="106" text-anchor="middle" font-size="13">Pod v1, Pod v1, Pod v1</text>
+
+        <rect x="680" y="154" width="240" height="110" rx="16" class="node ai"></rect>
+        <text x="800" y="188" text-anchor="middle" font-size="18" font-weight="800">ReplicaSet v2</text>
+        <text x="800" y="212" text-anchor="middle" font-size="13">Green / 新バージョン</text>
+        <text x="800" y="236" text-anchor="middle" font-size="13">Pod v2, Pod v2, Pod v2</text>
+
+        <rect x="230" y="334" width="500" height="92" rx="16" class="node api"></rect>
+        <text x="480" y="370" text-anchor="middle" font-size="18" font-weight="800">Rollout Controller</text>
+        <text x="480" y="396" text-anchor="middle" font-size="13">ReplicaSet作成、Pod readiness確認、Service selector切り替え、Analysis実行</text>
+
+        <rect x="230" y="482" width="500" height="74" rx="16" class="node ops"></rect>
+        <text x="480" y="512" text-anchor="middle" font-size="18" font-weight="800">Argo CD</text>
+        <text x="480" y="536" text-anchor="middle" font-size="13">GitのRollout / Service / AnalysisTemplateをクラスタへ同期</text>
+
+        <path d="M252 72 L326 72" class="arrow" marker-end="url(#arrowhead-bg)"></path>
+        <path d="M590 72 L676 72" class="arrow" marker-end="url(#arrowhead-bg)"></path>
+        <path d="M590 210 L676 210" class="arrow dashed" marker-end="url(#arrowhead-bg)"></path>
+        <path d="M480 426 L480 478" class="arrow" marker-end="url(#arrowhead-bg)"></path>
+        <path d="M606 334 C650 300 690 270 732 252" class="arrow dashed" marker-end="url(#arrowhead-bg)"></path>
+        <path d="M606 334 C650 262 690 126 732 96" class="arrow dashed" marker-end="url(#arrowhead-bg)"></path>
+
+        <text x="634" y="54" text-anchor="middle" font-size="12">現在はv1へ</text>
+        <text x="634" y="192" text-anchor="middle" font-size="12">確認用はv2へ</text>
+        <text x="480" y="302" text-anchor="middle" font-size="14" font-weight="700">Promote時: activeServiceのselectorをv2へ切り替える</text>
+      </svg>
+      <figcaption class="figure-caption">Blue-Greenの本質は、Podを直接切り替えることではなく、Service selectorが向くReplicaSetを切り替えることです。</figcaption>
+    </figure>
+
+    <h2>登場するKubernetesリソース</h2>
+    <table>
+      <thead><tr><th>リソース</th><th>Blue-Greenでの役割</th></tr></thead>
+      <tbody>
+        <tr><td><code>Rollout</code></td><td>Argo Rolloutsのカスタムリソース。<code>Deployment</code>の代わりに使い、Blue-Green戦略を定義する</td></tr>
+        <tr><td><code>ReplicaSet</code></td><td>Podテンプレートのバージョンごとに作られるPod群。v1とv2が並ぶ</td></tr>
+        <tr><td><code>Pod</code></td><td>実際にアプリケーションコンテナが動く単位</td></tr>
+        <tr><td><code>Service</code></td><td>Pod群への安定した入口。selectorでどのPodへ流すか決める</td></tr>
+        <tr><td><code>activeService</code></td><td>本番トラフィックを受けるService。通常Ingressや他サービスはこれを見る</td></tr>
+        <tr><td><code>previewService</code></td><td>新ReplicaSetを本番切り替え前に確認するService</td></tr>
+        <tr><td><code>Ingress</code></td><td>外部HTTP入口。通常は<code>activeService</code>へルーティングする</td></tr>
+        <tr><td><code>AnalysisRun</code></td><td>Promote前後にメトリクスやJobで成功判定する仕組み</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Blue-Greenの流れ</h2>
+    <ol>
+      <li>安定状態では、<code>activeService</code>が旧ReplicaSet v1のPodへトラフィックを流している。</li>
+      <li>Gitで<code>Rollout</code>のPod template、たとえばimage tagをv2へ更新する。</li>
+      <li>Argo CDがGitの変更をクラスタへ同期する。</li>
+      <li>Argo Rollouts Controllerが新しいReplicaSet v2を作る。</li>
+      <li><code>previewService</code>のselectorがReplicaSet v2のPodへ向く。</li>
+      <li>新PodがReadyになるまで待つ。</li>
+      <li>必要なら<code>prePromotionAnalysis</code>でメトリクスやJobを確認する。</li>
+      <li>手動または自動でPromoteする。</li>
+      <li><code>activeService</code>のselectorがv1からv2へ切り替わる。</li>
+      <li>必要なら<code>postPromotionAnalysis</code>を実行する。</li>
+      <li><code>scaleDownDelaySeconds</code>後に旧ReplicaSet v1を縮退する。</li>
+    </ol>
+
+    <h2>最小イメージのManifest</h2>
+    <pre><code>apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: sample-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sample-api
+  template:
+    metadata:
+      labels:
+        app: sample-api
+    spec:
+      containers:
+        - name: sample-api
+          image: example/sample-api:v2
+          ports:
+            - containerPort: 8080
+  strategy:
+    blueGreen:
+      activeService: sample-api-active
+      previewService: sample-api-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 60</code></pre>
+
+    <pre><code>apiVersion: v1
+kind: Service
+metadata:
+  name: sample-api-active
+spec:
+  selector:
+    app: sample-api
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-api-preview
+spec:
+  selector:
+    app: sample-api
+  ports:
+    - port: 80
+      targetPort: 8080</code></pre>
+
+    <p>実際にはArgo Rollouts ControllerがReplicaSetごとの一意なhash labelをService selectorへ注入し、<code>activeService</code>と<code>previewService</code>がどのReplicaSetへ向くかを制御します。</p>
+
+    <h2>Argo CDでの運用イメージ</h2>
+    <table>
+      <thead><tr><th>作業</th><th>Argo CD</th><th>Argo Rollouts</th></tr></thead>
+      <tbody>
+        <tr><td>image tagを更新</td><td>Git差分を検知して<code>Rollout</code>を同期</td><td>新ReplicaSetを作る</td></tr>
+        <tr><td>新バージョン確認</td><td>ApplicationのHealth/Sync状態を表示</td><td><code>previewService</code>で新Podへ流す</td></tr>
+        <tr><td>本番切り替え</td><td>Manifest自体はGit管理</td><td><code>promote</code>で<code>activeService</code>を新ReplicaSetへ切り替える</td></tr>
+        <tr><td>問題発生時</td><td>Gitを戻す、またはRollout状態を確認</td><td>abort/rollbackで旧安定ReplicaSetへ戻す</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Canaryとの違い</h2>
+    <table>
+      <thead><tr><th>観点</th><th>Blue-Green</th><th>Canary</th></tr></thead>
+      <tbody>
+        <tr><td>トラフィック</td><td>ある時点で旧から新へ切り替える</td><td>10%、30%、50%のように段階的に流す</td></tr>
+        <tr><td>必要リソース</td><td>旧・新を並べるので一時的に多い</td><td>段階配分により調整しやすい</td></tr>
+        <tr><td>確認方法</td><td>previewServiceで新環境を事前確認</td><td>本番トラフィックの一部で確認</td></tr>
+        <tr><td>向いている場面</td><td>一括切り替え、事前確認、即時rollbackを重視</td><td>本番影響を少しずつ見たい</td></tr>
+      </tbody>
+    </table>
+
+    <h2>注意点</h2>
+    <ul>
+      <li>Blue-GreenはPodを2系統持つため、一時的にリソースを多く使う。</li>
+      <li>DB migrationに後方互換性がないと、旧Podと新Podの並存中に壊れる。</li>
+      <li><code>Service</code>のselector切り替えにはiptablesなどの反映遅延があるため、旧ReplicaSetをすぐ落とさない。</li>
+      <li>Argo Rolloutsでは<code>scaleDownDelaySeconds</code>で旧ReplicaSetの縮退を遅らせる。</li>
+      <li>AWS ALB IngressではBlue-Green時に安全に切り替えられず、ダウンタイムリスクがあると公式ドキュメントで注意されている。</li>
+      <li>Promote前に確認したいなら<code>autoPromotionEnabled: false</code>を使う。</li>
+      <li>メトリクスで自動判定したいなら<code>prePromotionAnalysis</code>や<code>postPromotionAnalysis</code>を使う。</li>
+    </ul>
+
+    <h2>実務チェックリスト</h2>
+    <ul>
+      <li><code>activeService</code>と<code>previewService</code>の用途をチームで理解しているか。</li>
+      <li>Ingressや他サービスは<code>activeService</code>を見ているか。</li>
+      <li>Promoteを手動にするか自動にするか決めているか。</li>
+      <li>previewServiceで何を確認するか決めているか。</li>
+      <li>DB migrationは旧Pod・新Podの両方と互換性があるか。</li>
+      <li>旧ReplicaSetをどれくらい残すか決めているか。</li>
+      <li>rollback手順を<code>kubectl argo rollouts</code>または運用Runbookに書いているか。</li>
+      <li>メトリクス、ログ、アラートで切り替え後の異常を検知できるか。</li>
+    </ul>
+
+    <div class="callout">
+      <strong>理解の要点</strong>
+      <p>Argo RolloutsのBlue-Greenは、Kubernetes的には「新しいReplicaSetを先に作り、Serviceのselectorを旧ReplicaSetから新ReplicaSetへ切り替える仕組み」です。Argo CDはそのManifestをGitから同期し、Rollouts Controllerが実際の切り替えを制御します。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/">BlueGreen Deployment Strategy</a> — Argo Rollouts Documentation、確認日: 2026-06-18</li>
+      <li><a href="https://argo-rollouts.readthedocs.io/en/stable/concepts/">Concepts</a> — Argo Rollouts Documentation、確認日: 2026-06-18</li>
+      <li><a href="https://kubernetes.io/docs/concepts/services-networking/service/">Service</a> — Kubernetes Documentation、確認日: 2026-06-18</li>
+      <li><a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Deployments</a> — Kubernetes Documentation、確認日: 2026-06-18</li>
+    </ul>
+  </main>
+</body>
+</html>
