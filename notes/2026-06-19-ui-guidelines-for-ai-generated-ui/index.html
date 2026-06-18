@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI生成UIの安っぽさを減らすために、Qt風デザインやUIガイドラインをどう実装指示へ落とすかを解説">
+  <title>AI生成UIに効くUIガイドライン | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Frontend · 2026-06-19</p>
+    <h1>AI生成UIに効くUIガイドライン</h1>
+    <p class="lead">TechFeed記事の話題はおまけとして扱い、AI生成UIが安っぽく見える理由と、Qt風・Material・Apple HIG・FluentのようなUIガイドラインをどう指示へ落とすかを整理する。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>「Qt風」が効く理由は、派手な装飾ではなく、成熟したデスクトップアプリらしい制約がAIに入るからです。標準部品、控えめな色、明確な余白、整列、状態表現、密度のある情報配置を指定すると、AIが作りがちな大きすぎるカード、過剰なグラデーション、曖昧な階層を避けやすくなります。</p>
+    </div>
+
+    <h2>記事の内容は何を言っているか</h2>
+    <p>元記事は、AIにフロントエンドを生成させると「指定したスタイル + 安っぽさ」になりがちだが、「Qtアプリのように見せて」と指定すると、その安っぽさが大きく減ったという観察を紹介しています。</p>
+    <p>ただし、この記事自体は主観的な実験です。実務で使うなら「Qt風」という言葉だけに頼らず、Qtのような成熟したUIガイドラインが持つ具体的な制約をプロンプトや実装ルールに落とすのが重要です。</p>
+
+    <h2>なぜAI生成UIは安っぽく見えやすいのか</h2>
+    <table>
+      <thead><tr><th>よくある出力</th><th>安っぽく見える理由</th><th>直す方向</th></tr></thead>
+      <tbody>
+        <tr><td>巨大な角丸カードを多用する</td><td>情報密度が低く、部品の役割が曖昧になる</td><td>カードを必要な単位に限定し、表・ツールバー・リストを使う</td></tr>
+        <tr><td>派手なグラデーションと影</td><td>装飾が情報より目立つ</td><td>背景は控えめにし、強調色は操作や状態に限定する</td></tr>
+        <tr><td>余白が大きすぎる</td><td>業務ツールとしての密度が足りない</td><td>8px単位などの余白ルールを決め、コンパクトにする</td></tr>
+        <tr><td>ボタンの優先順位が全部同じ</td><td>次に何をすべきか分からない</td><td>Primary / Secondary / Destructiveを明確に分ける</td></tr>
+        <tr><td>フォームや表の整列が甘い</td><td>プロっぽさが失われる</td><td>ラベル、入力欄、数値、アクションを揃える</td></tr>
+        <tr><td>状態表現が弱い</td><td>操作可能、読み込み中、無効、エラーが区別できない</td><td>hover、focus、disabled、loading、errorを明示する</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Qt風デザインが効く理由</h2>
+    <p>QtはクロスプラットフォームのGUIフレームワークで、デスクトップアプリケーションの文脈が強いです。AIに「Qt風」と指定すると、次のような方向へ寄りやすくなります。</p>
+
+    <ul>
+      <li>WebのLPではなく、実用アプリの画面として構成する。</li>
+      <li>ツールバー、メニュー、パネル、表、フォームなど標準的な部品を使う。</li>
+      <li>色や影を控えめにし、操作対象と情報を優先する。</li>
+      <li>余白、境界線、区切り、整列で階層を作る。</li>
+      <li>情報密度を上げても破綻しないレイアウトにする。</li>
+      <li>派手さよりも、安定感、実用性、OSネイティブ感を優先する。</li>
+    </ul>
+
+    <div class="callout">
+      <strong>実務での解釈</strong>
+      <p>「Qt風」は、見た目のブランド名というより「業務アプリらしい制約」をAIへ入れるためのショートカットです。</p>
+    </div>
+
+    <h2>AIに渡すべきUIガイドライン</h2>
+    <table>
+      <thead><tr><th>観点</th><th>指示する内容</th><th>避けるもの</th></tr></thead>
+      <tbody>
+        <tr><td>レイアウト</td><td>ヘッダー、サイドバー、ツールバー、メイン領域、詳細ペインを明確に分ける</td><td>全部をカードの羅列にする</td></tr>
+        <tr><td>余白</td><td>8px単位で余白を揃え、関連要素は近づける</td><td>意味なく広い余白</td></tr>
+        <tr><td>色</td><td>中立色をベースにし、Accentは主要操作や状態だけに使う</td><td>全面グラデーション、過剰な彩度</td></tr>
+        <tr><td>タイポグラフィ</td><td>見出し、ラベル、本文、補足のサイズ差を控えめにする</td><td>巨大見出し、太字の乱用</td></tr>
+        <tr><td>コンポーネント</td><td>OS/デスクトップアプリ風の標準部品を使う</td><td>独自すぎるボタンや入力欄</td></tr>
+        <tr><td>状態</td><td>hover、focus、active、disabled、loading、errorを定義する</td><td>通常状態だけ作る</td></tr>
+        <tr><td>情報密度</td><td>表、リスト、フィルタ、詳細ペインで効率よく見せる</td><td>1項目1巨大カード</td></tr>
+        <tr><td>アクセシビリティ</td><td>キーボード操作、focus ring、コントラスト、ラベルを確保する</td><td>色だけで意味を伝える</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Qt風に寄せる具体ルール</h2>
+    <h3>1. レイアウトはアプリケーション構造にする</h3>
+    <pre><code>画面は以下の構造にしてください。
+- 上部: タイトルバーまたはツールバー
+- 左: ナビゲーションまたはフィルタペイン
+- 中央: 表、一覧、フォームなど主要作業領域
+- 右: 選択項目の詳細ペイン
+- 下部: ステータスバーまたは補足情報</code></pre>
+
+    <h3>2. 色は控えめにする</h3>
+    <pre><code>色はQt風のデスクトップアプリとして控えめにしてください。
+- 背景は薄いニュートラル
+- 境界線で区切る
+- Primary色は主要アクションだけに使う
+- 危険操作は赤系で明確にする
+- 装飾目的のグラデーションは使わない</code></pre>
+
+    <h3>3. 部品の役割を明確にする</h3>
+    <pre><code>以下のコンポーネントを標準的なデスクトップアプリ風にしてください。
+- Toolbar
+- Menu button
+- Table
+- Tree view
+- Form field
+- Dialog
+- Tabs
+- Status bar
+
+各部品に hover / focus / disabled / selected の状態を用意してください。</code></pre>
+
+    <h3>4. 密度を上げる</h3>
+    <pre><code>業務ツールとして使える情報密度にしてください。
+カードを多用せず、表・リスト・ペインを使ってください。
+余白は8px単位で揃え、要素間の関係が分かるようにしてください。</code></pre>
+
+    <h2>そのまま使えるプロンプト</h2>
+    <pre><code>このUIを、Qt風の成熟したデスクトップアプリの見た目で作ってください。
+
+重要:
+- ランディングページ風にしない
+- 巨大カード、過剰な角丸、派手なグラデーションを避ける
+- ツールバー、パネル、表、フォーム、ステータスバーを使う
+- 背景はニュートラル、境界線と余白で階層を作る
+- Primaryボタンは1画面に1つ程度
+- hover / focus / disabled / loading / error状態を定義する
+- 8px単位の余白で整列する
+- 業務アプリとして長時間使っても疲れない密度にする
+- アクセシビリティのため、focus ringと十分なコントラストを確保する</code></pre>
+
+    <h2>他のガイドラインとの使い分け</h2>
+    <table>
+      <thead><tr><th>指定</th><th>向いているUI</th><th>注意点</th></tr></thead>
+      <tbody>
+        <tr><td>Qt風</td><td>デスクトップ風の業務ツール、管理画面、個人用ツール</td><td>Webらしい華やかさは弱くなる</td></tr>
+        <tr><td>Material Design</td><td>モバイル/Android寄り、カード・状態変化が多いUI</td><td>AIがカード過多にしがち</td></tr>
+        <tr><td>Apple HIG</td><td>iOS/macOSらしい体験、余白と簡潔さを重視するUI</td><td>ブランド感がApple風に寄りすぎることがある</td></tr>
+        <tr><td>Fluent</td><td>Microsoft 365/Windows系、業務アプリ、Teams風UI</td><td>情報量が多い場合は密度管理が必要</td></tr>
+      </tbody>
+    </table>
+
+    <h2>AI生成UIレビューのチェックリスト</h2>
+    <ul>
+      <li>画面の主目的が1つに見えるか。</li>
+      <li>PrimaryアクションとSecondaryアクションが区別できるか。</li>
+      <li>カードや影が情報構造ではなく装飾として増えていないか。</li>
+      <li>表、リスト、フォームのラベルと値が揃っているか。</li>
+      <li>hover、focus、disabled、loading、error状態があるか。</li>
+      <li>色だけで状態を表していないか。</li>
+      <li>情報密度が用途に合っているか。</li>
+      <li>長時間使う業務ツールとして疲れないか。</li>
+      <li>キーボード操作とfocus順が破綻していないか。</li>
+      <li>OSネイティブ風にするなら、独自部品を増やしすぎていないか。</li>
+    </ul>
+
+    <h2>記事から得るべきポイント</h2>
+    <p>元記事の価値は「Qtと書けば万能」という話ではありません。AIは曖昧なデザイン指示を受けると、学習データ上の平均的で派手なWeb UIへ寄りがちです。そこで、QtやMaterial、Apple HIG、Fluentのような確立済みUIガイドライン名を使うと、AIにまとまった制約セットを渡せます。</p>
+
+    <div class="callout">
+      <strong>実務上の結論</strong>
+      <p>AI生成UIを安っぽくしないコツは、「かっこよく」ではなく「どのガイドラインに従うか」と「どの部品・余白・状態・密度にするか」を具体的に指示することです。Qt風は、特に業務ツールや個人用管理画面で効きやすい指定です。</p>
+    </div>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://techfeed.io/entries/6a2c72d2931f6b51a25a2321">AI生成UIの「安っぽさ」を一発で解決する意外な指示語 — Qt風デザインが効く理由</a> — TechFeed、確認日: 2026-06-19</li>
+      <li><a href="https://envs.net/~volpe/blog/posts/reduce-slop.html">Slightly reducing the sloppiness of AI generated frontend</a> — envs.net、確認日: 2026-06-19</li>
+      <li><a href="https://doc.qt.io/qt-6/higdpi.html">Qt Human Interface Guidelines</a> — Qt Documentation、確認日: 2026-06-19</li>
+      <li><a href="https://developer.apple.com/design/human-interface-guidelines/">Human Interface Guidelines</a> — Apple Developer、確認日: 2026-06-19</li>
+      <li><a href="https://m3.material.io/">Material Design</a> — Google、確認日: 2026-06-19</li>
+      <li><a href="https://fluent2.microsoft.design/">Fluent 2 Design System</a> — Microsoft、確認日: 2026-06-19</li>
+    </ul>
+  </main>
+</body>
+</html>
