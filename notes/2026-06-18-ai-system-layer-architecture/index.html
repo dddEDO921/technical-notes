@@ -12,45 +12,15 @@
     <nav><a href="../../">← ノート一覧へ</a></nav>
     <p class="eyebrow">AI Development · 2026-06-18</p>
     <h1>AIシステムをレイヤーで見る</h1>
-    <p class="lead">AIシステムを「LLMアプリ」として見るのではなく、普通のWebアプリにAI層と検索層が追加されたものとして分解する。エンジニアにとって、この見方が一番実装・設計・運用に使いやすい。</p>
+    <p class="lead">AIシステムは「LLMが中心の特別なアプリ」ではなく、普通のWebアプリにAI層と検索層が追加されたものとして見ると設計しやすい。</p>
 
     <div class="callout">
-      <strong>30秒でわかる答え</strong>
-      <p>LLMは中心に見えますが、実際には一部品です。AIシステムの品質は、LLM単体ではなく、UI、会話管理、権限制御、RAG、業務API、データ、監視、評価、人間の確認をどう接続するかで決まります。</p>
+      <strong>一番大事な理解</strong>
+      <p>LLMは重要ですが、システム全体から見ると一部品です。品質と安全性は、LLM単体ではなく、UI、アプリケーション制御、RAG、Tool Calling、業務API、データ、運用、人間確認をどう分けて接続するかで決まります。</p>
     </div>
 
-    <h2>全体像</h2>
-    <p>AIシステムは、普通のWebアプリに<strong>AI層</strong>と<strong>検索層</strong>が追加されたものとして見ると整理しやすくなります。</p>
-
-    <pre><code>UI層
-  ユーザーが入力する画面
-
-アプリケーション層
-  会話管理、プロンプト生成、権限制御
-
-AI層
-  LLM、Embedding、画像生成、音声認識
-
-検索層
-  RAG、ベクトルDB、全文検索
-
-業務API層
-  経費登録、予定作成、問い合わせ登録
-
-データ層
-  DB、文書、ログ、権限情報
-
-運用層
-  監視、評価、監査、コスト管理</code></pre>
-
-    <div class="diagram" aria-label="AIシステムの大きな構造">
-      <div>普通のWebアプリ<br><small>UI・API・DB・運用</small></div>
-      <div>AI層<br><small>LLM・Embedding・音声・画像</small></div>
-      <div>検索層<br><small>RAG・ベクトルDB・全文検索</small></div>
-    </div>
-
-    <h2>レイヤー関係図</h2>
-    <p>実装上は、ユーザー入力が上から下へ流れ、検索・AI・業務APIを経由して結果が戻ります。重要なのは、LLMが直接データや業務APIを自由に触るのではなく、アプリケーション層が必ず制御することです。</p>
+    <h2>1. 全体像</h2>
+    <p>普通のWebアプリに、AI層と検索層が追加されたイメージです。アプリケーション層が司令塔になり、LLM・検索・業務APIを直接つなげず、権限・検証・ログを通して制御します。</p>
 
     <figure class="architecture-figure" aria-label="AIシステムのレイヤー関係を示す図">
       <svg viewBox="0 0 960 720" role="img" aria-labelledby="ai-layer-diagram-title ai-layer-diagram-desc">
@@ -112,140 +82,59 @@ AI層
       <figcaption class="figure-caption">アプリケーション層が司令塔です。検索層、AI層、業務API層は直接つなげず、権限・検証・ログをアプリ側で制御します。</figcaption>
     </figure>
 
-    <section class="layer-map" aria-label="AIシステムのレイヤー関係図">
-      <div class="layer-row">
-        <div class="layer-label">UI層</div>
-        <div class="layer-box"><strong>ユーザーとの接点</strong>入力、確認、回答表示、引用表示、実行前の承認。</div>
-      </div>
-      <div class="flow-arrows"><span>依頼</span><span>確認</span><span>表示</span><span>修正</span><span>承認</span></div>
-      <div class="layer-row">
-        <div class="layer-label">アプリケーション層</div>
-        <div class="layer-box"><strong>司令塔</strong>会話管理、プロンプト生成、権限制御、ツール実行判断、ログ付与。AI・検索・業務APIを直接つなげず、ここで検証する。</div>
-      </div>
-      <div class="flow-arrows"><span>検索要求</span><span>AI呼び出し</span><span>API実行</span><span>検証</span><span>記録</span></div>
-      <div class="layer-row">
-        <div class="layer-label">検索層</div>
-        <div class="layer-box"><strong>根拠を探す</strong>RAG、ベクトル検索、全文検索、権限フィルタ、リランキング。LLMに渡す材料を選ぶ。</div>
-      </div>
-      <div class="layer-row">
-        <div class="layer-label">AI層</div>
-        <div class="layer-box"><strong>解釈・生成する</strong>LLM、Embedding、画像生成、音声認識。文章化、分類、要約、ツール候補生成を担当する。</div>
-      </div>
-      <div class="layer-row">
-        <div class="layer-label">業務API層</div>
-        <div class="layer-box"><strong>業務を実行する</strong>経費登録、予定作成、問い合わせ登録、チケット作成。副作用のある処理は確認・権限・監査付きで実行する。</div>
-      </div>
-      <div class="layer-row">
-        <div class="layer-label">データ層</div>
-        <div class="layer-box"><strong>正本を持つ</strong>DB、文書、ログ、権限情報。検索層・業務API層の参照元であり、AIの記憶ではない。</div>
-      </div>
-      <div class="layer-row">
-        <div class="layer-label">運用層</div>
-        <div class="layer-box"><strong>横断して見る</strong>監視、評価、監査、コスト管理、モデル変更の影響確認。全レイヤーのログとメトリクスを見る。</div>
-      </div>
-    </section>
-
-    <h2>責務の関係</h2>
-    <p>LLM、RAG、Tool Callingはそれぞれ役割が違います。アプリケーション層は、それらを組み合わせる制御面です。</p>
-
-    <div class="responsibility-grid">
-      <div class="responsibility-card">
-        <h3>LLM</h3>
-        <p>自然言語を解釈し、回答・要約・分類・ツール候補を生成する。正本データや権限判断は持たない。</p>
-      </div>
-      <div class="responsibility-card">
-        <h3>RAG</h3>
-        <p>文書やナレッジから根拠を探す。検索品質、権限フィルタ、鮮度管理が重要。</p>
-      </div>
-      <div class="responsibility-card">
-        <h3>Tool Calling</h3>
-        <p>外部API操作へ橋渡しする。実行可否、引数検証、確認、監査はアプリ側で行う。</p>
-      </div>
-    </div>
-
-    <h2>各レイヤーの責務</h2>
+    <h2>2. レイヤーごとの責務</h2>
     <table>
-      <thead><tr><th>レイヤー</th><th>責務</th><th>実装例</th></tr></thead>
+      <thead><tr><th>レイヤー</th><th>担当すること</th><th>実装例</th><th>責任を持たないこと</th></tr></thead>
       <tbody>
-        <tr><td>UI層</td><td>入力、確認、出力表示、ユーザー操作</td><td>Chat UI、フォーム、確認ダイアログ、引用表示</td></tr>
-        <tr><td>アプリケーション層</td><td>会話状態、プロンプト生成、権限制御、ツール実行の制御</td><td>Backend API、セッション管理、ポリシー判定、オーケストレーター</td></tr>
-        <tr><td>AI層</td><td>文章生成、分類、要約、埋め込み、音声認識、画像生成</td><td>LLM、Embedding model、STT、TTS、画像生成API</td></tr>
-        <tr><td>検索層</td><td>必要な情報を探してAIへ渡す</td><td>RAG、ベクトルDB、全文検索、リランキング</td></tr>
-        <tr><td>業務API層</td><td>実際の業務処理を実行する</td><td>経費登録、予定作成、CRM登録、チケット作成</td></tr>
-        <tr><td>データ層</td><td>正となる業務データ、文書、ログ、権限情報を保持する</td><td>RDB、ドキュメントストア、オブジェクトストレージ、監査ログ</td></tr>
-        <tr><td>運用層</td><td>監視、評価、監査、コスト、障害対応</td><td>メトリクス、トレース、Evals、アラート、利用量制限</td></tr>
+        <tr><td>UI層</td><td>入力、確認、結果表示</td><td>Chat UI、フォーム、引用表示、確認ダイアログ</td><td>権限判断や業務実行</td></tr>
+        <tr><td>アプリケーション層</td><td>全体制御、会話管理、プロンプト生成、権限制御、ログ</td><td>Backend API、オーケストレーター、ポリシー判定</td><td>LLM任せの実行判断</td></tr>
+        <tr><td>AI層</td><td>解釈、生成、分類、要約、ツール候補生成</td><td>LLM、Embedding、画像生成、音声認識</td><td>正本データ保持や最終責任</td></tr>
+        <tr><td>検索層</td><td>根拠を探してAIへ渡す</td><td>RAG、ベクトルDB、全文検索、リランキング</td><td>検索結果の無条件な正しさ保証</td></tr>
+        <tr><td>業務API層</td><td>実際の業務処理を行う</td><td>経費登録、予定作成、問い合わせ登録、チケット作成</td><td>自然言語解釈</td></tr>
+        <tr><td>データ層</td><td>正本データ、文書、ログ、権限情報を持つ</td><td>DB、文書、監査ログ、権限テーブル</td><td>AIの推論</td></tr>
+        <tr><td>運用層</td><td>監視、評価、監査、コスト管理</td><td>メトリクス、トレース、Evals、アラート</td><td>個別リクエストの業務判断</td></tr>
       </tbody>
     </table>
 
-    <h2>一番大事な理解</h2>
-    <p>AIシステムでは、LLMは中心に見えます。しかし、実際には次のような部品の1つです。</p>
+    <h2>3. 主要部品の関係</h2>
+    <div class="responsibility-grid">
+      <div class="responsibility-card">
+        <h3>LLM</h3>
+        <p>考える、文章化する、分類する、要約する、ツール候補を出す。業務データの正本や権限判断は持たない。</p>
+      </div>
+      <div class="responsibility-card">
+        <h3>RAG</h3>
+        <p>必要な文書やナレッジを探す。検索品質、権限フィルタ、鮮度管理、引用表示が重要。</p>
+      </div>
+      <div class="responsibility-card">
+        <h3>Tool Calling</h3>
+        <p>外部API操作につなげる。実行可否、引数検証、確認、監査はアプリケーション層で行う。</p>
+      </div>
+    </div>
 
-    <pre><code>LLM:
-  考える・文章化する・分類する
+    <table>
+      <thead><tr><th>部品</th><th>得意なこと</th><th>注意点</th></tr></thead>
+      <tbody>
+        <tr><td>LLM</td><td>自然言語の解釈、回答生成、分類、非構造データの構造化</td><td>もっともらしい誤回答を返すことがある</td></tr>
+        <tr><td>RAG</td><td>社内文書、FAQ、仕様書、過去ログから根拠を探す</td><td>似ているが正しくない文書、古い文書、権限外文書を拾う危険がある</td></tr>
+        <tr><td>Tool Calling</td><td>予定作成、経費登録、問い合わせ登録など外部操作へつなげる</td><td>重要操作は人間確認、スキーマ検証、監査ログが必要</td></tr>
+        <tr><td>アプリ</td><td>全体制御、権限、検証、ログ、失敗時の扱い</td><td>ここを薄くしすぎるとLLM任せの危険な設計になる</td></tr>
+        <tr><td>人間</td><td>目的設定、確認、責任、最終判断</td><td>責任をAIへ移譲したように見せない</td></tr>
+      </tbody>
+    </table>
 
-RAG:
-  必要な情報を探す
-
-Tool Calling:
-  外部API操作につなげる
-
-アプリ:
-  全体制御、権限、検証、ログを担当する
-
-人間:
-  目的設定、確認、責任を持つ</code></pre>
-
-    <p>LLMに全部やらせる設計は危険です。何を実行してよいか、どの情報へアクセスしてよいか、出力を信じてよいか、実行結果をどう記録するかは、アプリケーション層と運用層が制御します。</p>
-
-    <h2>処理の流れ</h2>
+    <h2>4. リクエスト処理の流れ</h2>
     <ol>
       <li>ユーザーがUIから依頼する。</li>
       <li>アプリケーション層がユーザー、権限、会話履歴、目的を確認する。</li>
       <li>必要なら検索層が文書やDBから関連情報を取得する。</li>
       <li>アプリケーション層がプロンプトを組み立て、AI層へ渡す。</li>
-      <li>AI層が回答、分類、次に呼ぶツール候補を生成する。</li>
+      <li>AI層が回答、分類、または呼ぶべきツール候補を生成する。</li>
       <li>Tool Callingが必要な場合、アプリケーション層が権限と引数を検証する。</li>
-      <li>業務API層が実際の登録・更新・検索を行う。</li>
-      <li>結果をデータ層へ保存し、監査ログとメトリクスを運用層へ送る。</li>
-      <li>UIで結果や確認事項をユーザーへ返す。</li>
+      <li>業務API層が登録・更新・検索などの処理を行う。</li>
+      <li>結果、検索根拠、ツール呼び出し、監査ログを記録する。</li>
+      <li>UIで結果、根拠、確認事項をユーザーへ返す。</li>
     </ol>
-
-    <div class="diagram" aria-label="AIシステムの処理フロー">
-      <div>ユーザー入力<br><small>UI層</small></div>
-      <div>制御・検索・AI呼び出し<br><small>アプリ / 検索 / AI層</small></div>
-      <div>業務実行・監査<br><small>API / データ / 運用層</small></div>
-    </div>
-
-    <h2>LLMの役割</h2>
-    <p>LLMは、自然言語を扱う強力な処理部品です。</p>
-
-    <ul>
-      <li>ユーザーの依頼を解釈する。</li>
-      <li>文章を生成・要約・分類する。</li>
-      <li>非構造データを構造化する。</li>
-      <li>次に呼ぶべきツール候補を提案する。</li>
-      <li>検索結果やAPI結果を人間向けに説明する。</li>
-    </ul>
-
-    <p>一方で、LLMは業務データの正本ではありません。最新情報、権限、状態変更、監査証跡は、外部データとアプリケーション側で管理します。</p>
-
-    <h2>RAGの役割</h2>
-    <p>RAGは、LLMの外にある情報を検索し、回答の材料として渡す仕組みです。社内文書、FAQ、仕様書、過去ログ、ナレッジベースなどを扱うときに使います。</p>
-
-    <table>
-      <thead><tr><th>検索方式</th><th>向いているもの</th><th>注意点</th></tr></thead>
-      <tbody>
-        <tr><td>ベクトル検索</td><td>意味が近い文書を探す</td><td>似ているが正しくない文書を拾うことがある</td></tr>
-        <tr><td>全文検索</td><td>固有名詞、ID、正確なキーワード</td><td>表現ゆれに弱い</td></tr>
-        <tr><td>ハイブリッド検索</td><td>意味検索とキーワード検索の両立</td><td>スコア調整やリランキングが必要</td></tr>
-        <tr><td>構造化DB検索</td><td>権限、金額、ステータスなど正確な条件</td><td>自然文から安全なクエリへ変換する必要がある</td></tr>
-      </tbody>
-    </table>
-
-    <p>RAGを入れても hallucination がゼロになるわけではありません。検索結果の品質、引用、根拠表示、回答できない場合の扱いが重要です。</p>
-
-    <h2>Tool Callingの役割</h2>
-    <p>Tool Callingは、LLMの判断を外部API操作へつなげる仕組みです。ただし、LLMが直接DBやAPIを自由に操作するのではなく、アプリケーション層が許可されたツールだけを実行します。</p>
 
     <pre><code>ユーザー:
   明日の10時に田中さんとの打ち合わせを入れて
@@ -262,17 +151,20 @@ LLM:
 運用:
   誰が何を作成したか監査ログに記録</code></pre>
 
-    <h3>Tool Callingでアプリ側がやること</h3>
-    <ul>
-      <li>呼び出し可能なツールを用途ごとに制限する。</li>
-      <li>引数をスキーマで検証する。</li>
-      <li>ユーザー権限を確認する。</li>
-      <li>重要操作は実行前に人間へ確認する。</li>
-      <li>実行結果と失敗理由をログに残す。</li>
-      <li>再試行してよい操作と、してはいけない操作を分ける。</li>
-    </ul>
+    <h2>5. 検索層の考え方</h2>
+    <p>RAGは「LLMに知識を足す魔法」ではなく、LLMの外にある情報を探して材料として渡す仕組みです。検索品質と権限制御が弱いと、回答品質も安全性も崩れます。</p>
 
-    <h2>レイヤーごとの壊れ方</h2>
+    <table>
+      <thead><tr><th>検索方式</th><th>向いているもの</th><th>注意点</th></tr></thead>
+      <tbody>
+        <tr><td>ベクトル検索</td><td>意味が近い文書を探す</td><td>似ているが正しくない文書を拾うことがある</td></tr>
+        <tr><td>全文検索</td><td>固有名詞、ID、正確なキーワード</td><td>表現ゆれに弱い</td></tr>
+        <tr><td>ハイブリッド検索</td><td>意味検索とキーワード検索の両立</td><td>スコア調整やリランキングが必要</td></tr>
+        <tr><td>構造化DB検索</td><td>権限、金額、ステータスなど正確な条件</td><td>自然文から安全なクエリへ変換する必要がある</td></tr>
+      </tbody>
+    </table>
+
+    <h2>6. レイヤーごとの壊れ方</h2>
     <table>
       <thead><tr><th>レイヤー</th><th>よくある失敗</th><th>対策</th></tr></thead>
       <tbody>
@@ -286,7 +178,19 @@ LLM:
       </tbody>
     </table>
 
-    <h2>設計時のチェックリスト</h2>
+    <h2>7. 普通のWebアプリとの違い</h2>
+    <table>
+      <thead><tr><th>普通のWebアプリ</th><th>AIシステム</th></tr></thead>
+      <tbody>
+        <tr><td>入力はフォームやボタンで構造化される</td><td>自然言語入力を解釈する必要がある</td></tr>
+        <tr><td>処理結果はコードで決まる</td><td>LLMの非決定的な出力が混ざる</td></tr>
+        <tr><td>DBやAPIが主な情報源</td><td>文書検索、Embedding、会話履歴も情報源になる</td></tr>
+        <tr><td>テストは入力と期待出力を比較しやすい</td><td>評価、サンプル会話、根拠一致、失敗率を見る必要がある</td></tr>
+        <tr><td>ログはAPI・DB操作中心</td><td>プロンプト、検索、ツール呼び出し、モデル応答も追跡対象</td></tr>
+      </tbody>
+    </table>
+
+    <h2>8. 設計チェックリスト</h2>
     <ul>
       <li>LLMに何を任せ、何を任せないかを決めたか。</li>
       <li>RAGで検索する文書に権限フィルタをかけているか。</li>
@@ -299,21 +203,9 @@ LLM:
       <li>トークン利用量、検索コスト、API実行回数に上限を設けているか。</li>
     </ul>
 
-    <h2>普通のWebアプリとの違い</h2>
-    <table>
-      <thead><tr><th>普通のWebアプリ</th><th>AIシステム</th></tr></thead>
-      <tbody>
-        <tr><td>入力はフォームやボタンで構造化される</td><td>自然言語入力を解釈する必要がある</td></tr>
-        <tr><td>処理結果はコードで決まる</td><td>LLMの非決定的な出力が混ざる</td></tr>
-        <tr><td>DBやAPIが主な情報源</td><td>文書検索、Embedding、会話履歴も情報源になる</td></tr>
-        <tr><td>テストは入力と期待出力を比較しやすい</td><td>評価、サンプル会話、根拠一致、失敗率を見る必要がある</td></tr>
-        <tr><td>ログはAPI・DB操作中心</td><td>プロンプト、検索、ツール呼び出し、モデル応答も追跡対象</td></tr>
-      </tbody>
-    </table>
-
     <div class="callout">
       <strong>実務上の結論</strong>
-      <p>AIシステムの設計で大事なのは、LLMを賢い中心として扱うことではありません。LLMを不確実な部品として扱い、検索・権限・検証・業務実行・監査・人間確認をレイヤーごとに分離することです。</p>
+      <p>AIシステムの設計では、LLMを賢い中心として扱うより、不確実な部品として扱う方が安全です。検索・権限・検証・業務実行・監査・人間確認をレイヤーごとに分けることで、壊れ方を予測しやすくなります。</p>
     </div>
 
     <h2>参照元</h2>
