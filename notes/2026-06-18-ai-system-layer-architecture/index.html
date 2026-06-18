@@ -49,6 +49,60 @@ AI層
       <div>検索層<br><small>RAG・ベクトルDB・全文検索</small></div>
     </div>
 
+    <h2>レイヤー関係図</h2>
+    <p>実装上は、ユーザー入力が上から下へ流れ、検索・AI・業務APIを経由して結果が戻ります。重要なのは、LLMが直接データや業務APIを自由に触るのではなく、アプリケーション層が必ず制御することです。</p>
+
+    <section class="layer-map" aria-label="AIシステムのレイヤー関係図">
+      <div class="layer-row">
+        <div class="layer-label">UI層</div>
+        <div class="layer-box"><strong>ユーザーとの接点</strong>入力、確認、回答表示、引用表示、実行前の承認。</div>
+      </div>
+      <div class="flow-arrows"><span>依頼</span><span>確認</span><span>表示</span><span>修正</span><span>承認</span></div>
+      <div class="layer-row">
+        <div class="layer-label">アプリケーション層</div>
+        <div class="layer-box"><strong>司令塔</strong>会話管理、プロンプト生成、権限制御、ツール実行判断、ログ付与。AI・検索・業務APIを直接つなげず、ここで検証する。</div>
+      </div>
+      <div class="flow-arrows"><span>検索要求</span><span>AI呼び出し</span><span>API実行</span><span>検証</span><span>記録</span></div>
+      <div class="layer-row">
+        <div class="layer-label">検索層</div>
+        <div class="layer-box"><strong>根拠を探す</strong>RAG、ベクトル検索、全文検索、権限フィルタ、リランキング。LLMに渡す材料を選ぶ。</div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-label">AI層</div>
+        <div class="layer-box"><strong>解釈・生成する</strong>LLM、Embedding、画像生成、音声認識。文章化、分類、要約、ツール候補生成を担当する。</div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-label">業務API層</div>
+        <div class="layer-box"><strong>業務を実行する</strong>経費登録、予定作成、問い合わせ登録、チケット作成。副作用のある処理は確認・権限・監査付きで実行する。</div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-label">データ層</div>
+        <div class="layer-box"><strong>正本を持つ</strong>DB、文書、ログ、権限情報。検索層・業務API層の参照元であり、AIの記憶ではない。</div>
+      </div>
+      <div class="layer-row">
+        <div class="layer-label">運用層</div>
+        <div class="layer-box"><strong>横断して見る</strong>監視、評価、監査、コスト管理、モデル変更の影響確認。全レイヤーのログとメトリクスを見る。</div>
+      </div>
+    </section>
+
+    <h2>責務の関係</h2>
+    <p>LLM、RAG、Tool Callingはそれぞれ役割が違います。アプリケーション層は、それらを組み合わせる制御面です。</p>
+
+    <div class="responsibility-grid">
+      <div class="responsibility-card">
+        <h3>LLM</h3>
+        <p>自然言語を解釈し、回答・要約・分類・ツール候補を生成する。正本データや権限判断は持たない。</p>
+      </div>
+      <div class="responsibility-card">
+        <h3>RAG</h3>
+        <p>文書やナレッジから根拠を探す。検索品質、権限フィルタ、鮮度管理が重要。</p>
+      </div>
+      <div class="responsibility-card">
+        <h3>Tool Calling</h3>
+        <p>外部API操作へ橋渡しする。実行可否、引数検証、確認、監査はアプリ側で行う。</p>
+      </div>
+    </div>
+
     <h2>各レイヤーの責務</h2>
     <table>
       <thead><tr><th>レイヤー</th><th>責務</th><th>実装例</th></tr></thead>
