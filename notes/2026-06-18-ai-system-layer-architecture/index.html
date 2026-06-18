@@ -52,6 +52,66 @@ AI層
     <h2>レイヤー関係図</h2>
     <p>実装上は、ユーザー入力が上から下へ流れ、検索・AI・業務APIを経由して結果が戻ります。重要なのは、LLMが直接データや業務APIを自由に触るのではなく、アプリケーション層が必ず制御することです。</p>
 
+    <figure class="architecture-figure" aria-label="AIシステムのレイヤー関係を示す図">
+      <svg viewBox="0 0 960 720" role="img" aria-labelledby="ai-layer-diagram-title ai-layer-diagram-desc">
+        <title id="ai-layer-diagram-title">AIシステムのレイヤー関係図</title>
+        <desc id="ai-layer-diagram-desc">UI層からアプリケーション層へ入力が渡り、アプリケーション層が検索層、AI層、業務API層を制御し、データ層と運用層が横断的に関わる構造。</desc>
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+            <polygon points="0 0, 10 4, 0 8" fill="#5f625d"></polygon>
+          </marker>
+        </defs>
+
+        <rect x="350" y="24" width="260" height="72" rx="14" class="node"></rect>
+        <text x="480" y="54" text-anchor="middle" font-size="18" font-weight="700">UI層</text>
+        <text x="480" y="78" text-anchor="middle" font-size="13">入力・確認・結果表示</text>
+
+        <rect x="300" y="140" width="360" height="96" rx="16" class="node control"></rect>
+        <text x="480" y="174" text-anchor="middle" font-size="19" font-weight="800">アプリケーション層</text>
+        <text x="480" y="199" text-anchor="middle" font-size="13">会話管理・プロンプト生成・権限制御</text>
+        <text x="480" y="219" text-anchor="middle" font-size="13">ツール実行判断・ログ付与</text>
+
+        <rect x="48" y="300" width="240" height="92" rx="16" class="node search"></rect>
+        <text x="168" y="334" text-anchor="middle" font-size="18" font-weight="800">検索層</text>
+        <text x="168" y="359" text-anchor="middle" font-size="13">RAG・ベクトルDB</text>
+        <text x="168" y="379" text-anchor="middle" font-size="13">全文検索・権限フィルタ</text>
+
+        <rect x="360" y="300" width="240" height="92" rx="16" class="node ai"></rect>
+        <text x="480" y="334" text-anchor="middle" font-size="18" font-weight="800">AI層</text>
+        <text x="480" y="359" text-anchor="middle" font-size="13">LLM・Embedding</text>
+        <text x="480" y="379" text-anchor="middle" font-size="13">画像生成・音声認識</text>
+
+        <rect x="672" y="300" width="240" height="92" rx="16" class="node api"></rect>
+        <text x="792" y="334" text-anchor="middle" font-size="18" font-weight="800">業務API層</text>
+        <text x="792" y="359" text-anchor="middle" font-size="13">経費登録・予定作成</text>
+        <text x="792" y="379" text-anchor="middle" font-size="13">問い合わせ登録</text>
+
+        <rect x="160" y="474" width="640" height="82" rx="16" class="node"></rect>
+        <text x="480" y="506" text-anchor="middle" font-size="18" font-weight="800">データ層</text>
+        <text x="480" y="531" text-anchor="middle" font-size="13">DB・文書・ログ・権限情報。AIの記憶ではなく正本を持つ</text>
+
+        <rect x="160" y="606" width="640" height="72" rx="16" class="node ops"></rect>
+        <text x="480" y="636" text-anchor="middle" font-size="18" font-weight="800">運用層</text>
+        <text x="480" y="660" text-anchor="middle" font-size="13">監視・評価・監査・コスト管理。全レイヤーを横断して見る</text>
+
+        <path d="M480 96 L480 136" class="arrow"></path>
+        <path d="M360 236 C300 260 220 270 168 296" class="arrow"></path>
+        <path d="M480 236 L480 296" class="arrow"></path>
+        <path d="M600 236 C660 260 740 270 792 296" class="arrow"></path>
+        <path d="M168 392 C220 440 330 452 398 472" class="arrow"></path>
+        <path d="M480 392 L480 470" class="arrow dashed"></path>
+        <path d="M792 392 C740 440 630 452 562 472" class="arrow"></path>
+        <path d="M480 556 L480 602" class="arrow"></path>
+        <path d="M808 606 C884 520 884 250 666 188" class="arrow dashed"></path>
+
+        <text x="238" y="270" text-anchor="middle" font-size="12">根拠を探す</text>
+        <text x="520" y="270" text-anchor="middle" font-size="12">解釈・生成</text>
+        <text x="730" y="270" text-anchor="middle" font-size="12">外部操作</text>
+        <text x="842" y="496" text-anchor="middle" font-size="12">ログ・評価・コスト</text>
+      </svg>
+      <figcaption class="figure-caption">アプリケーション層が司令塔です。検索層、AI層、業務API層は直接つなげず、権限・検証・ログをアプリ側で制御します。</figcaption>
+    </figure>
+
     <section class="layer-map" aria-label="AIシステムのレイヤー関係図">
       <div class="layer-row">
         <div class="layer-label">UI層</div>

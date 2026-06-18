@@ -235,6 +235,75 @@ select {
   margin-top: 0;
 }
 
+.architecture-figure {
+  margin: 30px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow-x: auto;
+}
+
+.architecture-figure svg {
+  display: block;
+  min-width: 860px;
+  width: 100%;
+  height: auto;
+}
+
+.architecture-figure text {
+  font-family: "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  fill: var(--ink);
+}
+
+.architecture-figure .node {
+  fill: #fffdf8;
+  stroke: #cfc8b8;
+  stroke-width: 2;
+}
+
+.architecture-figure .control {
+  fill: #dceee9;
+  stroke: #176b5b;
+}
+
+.architecture-figure .ai {
+  fill: #eee7ff;
+  stroke: #6650a4;
+}
+
+.architecture-figure .search {
+  fill: #e8f1ff;
+  stroke: #2f5f9f;
+}
+
+.architecture-figure .api {
+  fill: #fff1d6;
+  stroke: #9b6a00;
+}
+
+.architecture-figure .ops {
+  fill: #f5e1df;
+  stroke: #9b4a42;
+}
+
+.architecture-figure .arrow {
+  stroke: #5f625d;
+  stroke-width: 2.4;
+  fill: none;
+  marker-end: url(#arrowhead);
+}
+
+.architecture-figure .dashed {
+  stroke-dasharray: 6 6;
+}
+
+.figure-caption {
+  margin: 10px 4px 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
 pre {
   overflow-x: auto;
   padding: 20px;
