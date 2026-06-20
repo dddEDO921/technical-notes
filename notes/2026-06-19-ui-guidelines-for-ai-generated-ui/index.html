@@ -12,18 +12,93 @@
     <nav><a href="../../">← ノート一覧へ</a></nav>
     <p class="eyebrow">Frontend · 2026-06-19</p>
     <h1>AI生成UIに効くUIガイドライン</h1>
-    <p class="lead">TechFeed記事の話題はおまけとして扱い、AI生成UIが安っぽく見える理由と、Qt風・Material・Apple HIG・FluentのようなUIガイドラインをどう指示へ落とすかを整理する。</p>
+    <p class="lead">AI生成UIの品質を上げるために、まず代表的なUIガイドラインを知り、次にAIへどう渡すかを整理する。参考記事の「Qt風が効く」という話は最後に補足として扱う。</p>
 
     <div class="callout">
       <strong>30秒でわかる答え</strong>
       <p>「Qt風」が効く理由は、派手な装飾ではなく、成熟したデスクトップアプリらしい制約がAIに入るからです。標準部品、控えめな色、明確な余白、整列、状態表現、密度のある情報配置を指定すると、AIが作りがちな大きすぎるカード、過剰なグラデーション、曖昧な階層を避けやすくなります。</p>
     </div>
 
-    <h2>記事の内容は何を言っているか</h2>
-    <p>元記事は、AIにフロントエンドを生成させると「指定したスタイル + 安っぽさ」になりがちだが、「Qtアプリのように見せて」と指定すると、その安っぽさが大きく減ったという観察を紹介しています。</p>
-    <p>ただし、この記事自体は主観的な実験です。実務で使うなら「Qt風」という言葉だけに頼らず、Qtのような成熟したUIガイドラインが持つ具体的な制約をプロンプトや実装ルールに落とすのが重要です。</p>
+    <h2>1. まず、こんなUIガイドラインがある</h2>
+    <p>AIに「いい感じに」「モダンに」と頼むより、既存のUIガイドライン名を指定した方が出力が安定しやすくなります。ガイドライン名は、見た目の雰囲気だけでなく、部品、余白、状態、操作感、情報密度のまとまった制約として働きます。</p>
 
-    <h2>なぜAI生成UIは安っぽく見えやすいのか</h2>
+    <table>
+      <thead><tr><th>ガイドライン</th><th>得意なUI</th><th>AIに渡すときの狙い</th></tr></thead>
+      <tbody>
+        <tr><td>Qt Quick Controls Guidelines / Qt風</td><td>デスクトップ風の業務ツール、管理画面、個人用ツール</td><td>安定感、情報密度、標準部品、控えめな装飾を出したい</td></tr>
+        <tr><td>Material Design</td><td>モバイル/Android寄り、状態変化が多いWebアプリ</td><td>コンポーネント体系、動き、状態、カード構造を明確にしたい</td></tr>
+        <tr><td>Apple Human Interface Guidelines</td><td>iOS/macOSらしい簡潔なUI</td><td>余白、階層、控えめな表現、プラットフォームらしさを出したい</td></tr>
+        <tr><td>Fluent 2 Design System</td><td>Microsoft 365/Windows/Teams風の業務アプリ</td><td>業務アプリらしい部品、アクセシビリティ、Microsoft系の操作感を出したい</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. どう選ぶとよいか</h2>
+    <table>
+      <thead><tr><th>作りたいもの</th><th>まず試す指定</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>社内管理画面、CRUD、一覧・詳細・フォーム</td><td>Qt風、Fluent</td><td>情報密度と標準部品が必要だから</td></tr>
+        <tr><td>個人用の実用ツール</td><td>Qt風</td><td>派手さよりも使いやすさと落ち着きが出やすいから</td></tr>
+        <tr><td>モバイル前提のサービス</td><td>Material Design、Apple HIG</td><td>タップ領域、画面遷移、状態表現を寄せやすいから</td></tr>
+        <tr><td>Microsoft 365連携やTeams風UI</td><td>Fluent 2</td><td>既存の業務アプリ利用者に馴染みやすいから</td></tr>
+        <tr><td>LPやブランドサイト</td><td>Qt風は第一候補にしない</td><td>Qt風は業務ツール寄りで、華やかな訴求には弱いから</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. AIにはこんなふうに渡すとよい</h2>
+    <p>ガイドライン名だけでも効くことはありますが、実務では「どのガイドラインに従うか」と「どの要素を守るか」をセットで渡す方が安定します。</p>
+
+    <h3>基本テンプレート</h3>
+    <pre><code>以下のUIを作ってください。
+
+デザイン方針:
+- [Qt風 / Material Design / Apple HIG / Fluent 2] を参考にする
+- ただし、ブランド模倣ではなく、レイアウト・余白・部品・状態表現の原則を使う
+
+守ること:
+- 画面の主目的を1つにする
+- Primary / Secondary / Destructive を明確に分ける
+- hover / focus / disabled / loading / error の状態を用意する
+- 余白、整列、境界線で情報階層を作る
+- 色だけで状態を伝えない
+- キーボード操作とアクセシビリティを考慮する
+
+避けること:
+- 巨大カードの乱用
+- 過剰な角丸
+- 派手なグラデーション
+- 装飾目的の強い影
+- 余白が広すぎるランディングページ風の見た目</code></pre>
+
+    <h3>Qt風に寄せたい場合</h3>
+    <pre><code>このUIを、Qt風の成熟したデスクトップアプリの見た目で作ってください。
+
+重要:
+- ランディングページ風にしない
+- ツールバー、パネル、表、フォーム、ステータスバーを使う
+- 背景はニュートラル、境界線と余白で階層を作る
+- Primaryボタンは1画面に1つ程度
+- 8px単位の余白で整列する
+- 業務アプリとして長時間使っても疲れない情報密度にする
+- hover / focus / disabled / selected / loading / error状態を定義する</code></pre>
+
+    <h3>Material Designに寄せたい場合</h3>
+    <pre><code>Material Designを参考にしてください。
+
+ただし:
+- カードを増やしすぎない
+- elevationは情報階層を示す目的に限定する
+- タップ領域、状態変化、入力エラーを明確にする
+- Primary色は主要アクションに限定する</code></pre>
+
+    <h3>Fluentに寄せたい場合</h3>
+    <pre><code>Fluent 2 Design Systemを参考にした業務アプリUIにしてください。
+
+重視すること:
+- コマンドバー、ナビゲーション、表、詳細ペインを自然に配置する
+- Microsoft 365系の業務ツールのような落ち着いた密度にする
+- アクセシビリティ、focus order、状態表現を明確にする</code></pre>
+
+    <h2>4. なぜAI生成UIは安っぽく見えやすいのか</h2>
     <table>
       <thead><tr><th>よくある出力</th><th>安っぽく見える理由</th><th>直す方向</th></tr></thead>
       <tbody>
@@ -36,7 +111,7 @@
       </tbody>
     </table>
 
-    <h2>Qt風デザインが効く理由</h2>
+    <h2>5. Qt風デザインが効く理由</h2>
     <p>QtはクロスプラットフォームのGUIフレームワークで、デスクトップアプリケーションの文脈が強いです。AIに「Qt風」と指定すると、次のような方向へ寄りやすくなります。</p>
 
     <ul>
@@ -53,7 +128,9 @@
       <p>「Qt風」は、見た目のブランド名というより「業務アプリらしい制約」をAIへ入れるためのショートカットです。</p>
     </div>
 
-    <h2>AIに渡すべきUIガイドライン</h2>
+    <h2>6. UIガイドラインとしてAIに渡す具体項目</h2>
+    <p>ガイドライン名だけで足りない場合は、以下の観点を明示します。</p>
+
     <table>
       <thead><tr><th>観点</th><th>指示する内容</th><th>避けるもの</th></tr></thead>
       <tbody>
@@ -68,7 +145,7 @@
       </tbody>
     </table>
 
-    <h2>Qt風に寄せる具体ルール</h2>
+    <h2>7. Qt風に寄せる具体ルール</h2>
     <h3>1. レイアウトはアプリケーション構造にする</h3>
     <pre><code>画面は以下の構造にしてください。
 - 上部: タイトルバーまたはツールバー
@@ -103,32 +180,7 @@
 カードを多用せず、表・リスト・ペインを使ってください。
 余白は8px単位で揃え、要素間の関係が分かるようにしてください。</code></pre>
 
-    <h2>そのまま使えるプロンプト</h2>
-    <pre><code>このUIを、Qt風の成熟したデスクトップアプリの見た目で作ってください。
-
-重要:
-- ランディングページ風にしない
-- 巨大カード、過剰な角丸、派手なグラデーションを避ける
-- ツールバー、パネル、表、フォーム、ステータスバーを使う
-- 背景はニュートラル、境界線と余白で階層を作る
-- Primaryボタンは1画面に1つ程度
-- hover / focus / disabled / loading / error状態を定義する
-- 8px単位の余白で整列する
-- 業務アプリとして長時間使っても疲れない密度にする
-- アクセシビリティのため、focus ringと十分なコントラストを確保する</code></pre>
-
-    <h2>他のガイドラインとの使い分け</h2>
-    <table>
-      <thead><tr><th>指定</th><th>向いているUI</th><th>注意点</th></tr></thead>
-      <tbody>
-        <tr><td>Qt風</td><td>デスクトップ風の業務ツール、管理画面、個人用ツール</td><td>Webらしい華やかさは弱くなる</td></tr>
-        <tr><td>Material Design</td><td>モバイル/Android寄り、カード・状態変化が多いUI</td><td>AIがカード過多にしがち</td></tr>
-        <tr><td>Apple HIG</td><td>iOS/macOSらしい体験、余白と簡潔さを重視するUI</td><td>ブランド感がApple風に寄りすぎることがある</td></tr>
-        <tr><td>Fluent</td><td>Microsoft 365/Windows系、業務アプリ、Teams風UI</td><td>情報量が多い場合は密度管理が必要</td></tr>
-      </tbody>
-    </table>
-
-    <h2>AI生成UIレビューのチェックリスト</h2>
+    <h2>8. AI生成UIレビューのチェックリスト</h2>
     <ul>
       <li>画面の主目的が1つに見えるか。</li>
       <li>PrimaryアクションとSecondaryアクションが区別できるか。</li>
@@ -142,8 +194,12 @@
       <li>OSネイティブ風にするなら、独自部品を増やしすぎていないか。</li>
     </ul>
 
-    <h2>記事から得るべきポイント</h2>
-    <p>元記事の価値は「Qtと書けば万能」という話ではありません。AIは曖昧なデザイン指示を受けると、学習データ上の平均的で派手なWeb UIへ寄りがちです。そこで、QtやMaterial、Apple HIG、Fluentのような確立済みUIガイドライン名を使うと、AIにまとまった制約セットを渡せます。</p>
+    <h2>9. 参考記事の内容</h2>
+    <p>参考記事では、AIにフロントエンドを生成させると「指定したスタイル + 安っぽさ」になりがちだが、「Qtアプリのように見せて」と指定すると、その安っぽさが大きく減ったという観察が紹介されています。</p>
+    <p>この話は興味深いですが、主観的な実験です。実務で使うなら「Qt風」という言葉だけに頼らず、Qtのような成熟したUIガイドラインが持つ具体的な制約をプロンプトや実装ルールに落とすのが重要です。</p>
+
+    <h2>10. 記事から得るべきポイント</h2>
+    <p>元記事の価値は「Qtと書けば万能」という話ではありません。AIは曖昧なデザイン指示を受けると、学習データ上の平均的で派手なWeb UIへ寄りがちです。そこで、Qt Quick Controls GuidelinesやMaterial、Apple HIG、Fluentのような確立済みUIガイドライン名を使うと、AIにまとまった制約セットを渡せます。</p>
 
     <div class="callout">
       <strong>実務上の結論</strong>
@@ -152,12 +208,12 @@
 
     <h2>参照元</h2>
     <ul>
-      <li><a href="https://techfeed.io/entries/6a2c72d2931f6b51a25a2321">AI生成UIの「安っぽさ」を一発で解決する意外な指示語 — Qt風デザインが効く理由</a> — TechFeed、確認日: 2026-06-19</li>
-      <li><a href="https://envs.net/~volpe/blog/posts/reduce-slop.html">Slightly reducing the sloppiness of AI generated frontend</a> — envs.net、確認日: 2026-06-19</li>
-      <li><a href="https://doc.qt.io/qt-6/higdpi.html">Qt Human Interface Guidelines</a> — Qt Documentation、確認日: 2026-06-19</li>
-      <li><a href="https://developer.apple.com/design/human-interface-guidelines/">Human Interface Guidelines</a> — Apple Developer、確認日: 2026-06-19</li>
-      <li><a href="https://m3.material.io/">Material Design</a> — Google、確認日: 2026-06-19</li>
-      <li><a href="https://fluent2.microsoft.design/">Fluent 2 Design System</a> — Microsoft、確認日: 2026-06-19</li>
+      <li><a href="https://techfeed.io/entries/6a2c72d2931f6b51a25a2321">AI生成UIの「安っぽさ」を一発で解決する意外な指示語 — Qt風デザインが効く理由</a> — TechFeed、確認日: 2026-06-20</li>
+      <li><a href="https://envs.net/~volpe/blog/posts/reduce-slop.html">Slightly reducing the sloppiness of AI generated frontend</a> — envs.net、確認日: 2026-06-20</li>
+      <li><a href="https://doc.qt.io/qt-6/qtquickcontrols-guidelines.html">Qt Quick Controls Guidelines</a> — Qt Documentation、確認日: 2026-06-20</li>
+      <li><a href="https://developer.apple.com/design/human-interface-guidelines/">Human Interface Guidelines</a> — Apple Developer、確認日: 2026-06-20</li>
+      <li><a href="https://m3.material.io/">Material Design</a> — Google、確認日: 2026-06-20</li>
+      <li><a href="https://fluent2.microsoft.design/">Fluent 2 Design System</a> — Microsoft、確認日: 2026-06-20</li>
     </ul>
   </main>
 </body>
