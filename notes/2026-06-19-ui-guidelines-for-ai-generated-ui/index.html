@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="AI生成UIの安っぽさを減らすために、Qt風デザインやUIガイドラインをどう実装指示へ落とすかを解説">
+  <meta name="description" content="AI生成UIに効くQt、Material Design、Apple HIG、Fluent 2の考え方と画面サンプルを整理">
   <title>AI生成UIに効くUIガイドライン | Technical Notes</title>
   <link rel="stylesheet" href="../../styles/site.css">
 </head>
@@ -12,175 +12,80 @@
     <nav><a href="../../">← ノート一覧へ</a></nav>
     <p class="eyebrow">Frontend · 2026-06-19</p>
     <h1>AI生成UIに効くUIガイドライン</h1>
-    <p class="lead">AI生成UIの品質を上げるために、まず代表的なUIガイドラインを知り、次にAIへどう渡すかを整理する。参考記事の「Qt風が効く」という話は最後に補足として扱う。</p>
+    <p class="lead">AI生成UIの品質を上げるために、Qt、Material Design、Apple Human Interface Guidelines、Fluent 2の考え方と、同じ題材をそれぞれのガイドラインに寄せたときの画面サンプルを整理する。</p>
 
     <div class="callout">
       <strong>30秒でわかる答え</strong>
-      <p>「Qt風」が効く理由は、派手な装飾ではなく、成熟したデスクトップアプリらしい制約がAIに入るからです。標準部品、控えめな色、明確な余白、整列、状態表現、密度のある情報配置を指定すると、AIが作りがちな大きすぎるカード、過剰なグラデーション、曖昧な階層を避けやすくなります。</p>
+      <p>ガイドライン名を使う価値は、AIへまとまった制約を渡せることです。Qt風なら密度のある業務ツール、Materialなら状態と動きが分かるモバイル/Webアプリ、Apple HIGなら内容を主役にした自然な操作、Fluent 2ならMicrosoft 365風の共同作業画面へ寄せやすくなります。</p>
     </div>
 
-    <h2>1. まず、こんなUIガイドラインがある</h2>
-    <p>AIに「いい感じに」「モダンに」と頼むより、既存のUIガイドライン名を指定した方が出力が安定しやすくなります。ガイドライン名は、見た目の雰囲気だけでなく、部品、余白、状態、操作感、情報密度のまとまった制約として働きます。</p>
+    <h2>1. ガイドラインは「見た目」ではなく制約セット</h2>
+    <p>UIガイドラインは、単なる配色や雰囲気ではありません。どの部品を使うか、余白をどう取るか、状態をどう見せるか、操作をどの順番で進めるか、どの密度で情報を置くかをまとめた制約セットです。</p>
+    <p>AIにとっても、この制約セットは有効です。「きれいに」「モダンに」では出力が平均的なWeb UIへ流れやすい一方で、ガイドライン名を指定すると、部品、階層、密度、状態表現の方向が揃いやすくなります。</p>
 
     <table>
-      <thead><tr><th>ガイドライン</th><th>得意なUI</th><th>AIに渡すときの狙い</th></tr></thead>
+      <thead><tr><th>ガイドライン</th><th>中心にある考え方</th><th>向いている画面</th></tr></thead>
       <tbody>
-        <tr><td>Qt Quick Controls Guidelines / Qt風</td><td>デスクトップ風の業務ツール、管理画面、個人用ツール</td><td>安定感、情報密度、標準部品、控えめな装飾を出したい</td></tr>
-        <tr><td>Material Design</td><td>モバイル/Android寄り、状態変化が多いWebアプリ</td><td>コンポーネント体系、動き、状態、カード構造を明確にしたい</td></tr>
-        <tr><td>Apple Human Interface Guidelines</td><td>iOS/macOSらしい簡潔なUI</td><td>余白、階層、控えめな表現、プラットフォームらしさを出したい</td></tr>
-        <tr><td>Fluent 2 Design System</td><td>Microsoft 365/Windows/Teams風の業務アプリ</td><td>業務アプリらしい部品、アクセシビリティ、Microsoft系の操作感を出したい</td></tr>
+        <tr><td>Qt Quick Controls Guidelines / Qt風</td><td>標準コントロールを適材適所で使う実用アプリ設計</td><td>管理画面、デスクトップ風ツール、業務アプリ</td></tr>
+        <tr><td>Material Design</td><td>コンポーネント、状態、動き、階層を体系化する設計</td><td>モバイルWeb、Android風アプリ、状態変化が多いUI</td></tr>
+        <tr><td>Apple Human Interface Guidelines</td><td>内容を主役にし、プラットフォームの慣習に沿う設計</td><td>iOS/macOS風アプリ、個人向けツール、軽い編集画面</td></tr>
+        <tr><td>Fluent 2 Design System</td><td>業務アプリの生産性、アクセシビリティ、一貫性を支える設計</td><td>Microsoft 365風ツール、チーム業務、情報量の多い画面</td></tr>
       </tbody>
     </table>
 
-    <h2>2. どう選ぶとよいか</h2>
+    <h2>2. 同じ題材で見るサンプル</h2>
+    <p>ここでは「顧客問い合わせを確認し、担当者を割り当て、返信状況を管理する画面」を同じ題材として、各ガイドラインに寄せた場合の違いを見ます。</p>
+
+    <h3>Qt風のサンプル: 密度のあるデスクトップ業務ツール</h3>
+    <p>Qt Quick Controlsは、ボタン、入力、メニュー、ナビゲーション、ポップアップなどのコントロールを組み合わせて、Qt Quick上で完全なインターフェイスを作るための実用的なガイドラインを提供しています。ポイントは、凝った装飾よりも、標準部品を使って操作対象をはっきりさせることです。</p>
+    <figure class="architecture-figure ui-sample-figure">
+      <img src="assets/qt-style-dashboard.png" alt="Qt風の顧客問い合わせ管理画面。メニューバー、ツールバー、ツリーナビゲーション、問い合わせ一覧テーブル、詳細ペイン、ステータスバーを持つ密度の高いデスクトップアプリ。">
+      <figcaption class="figure-caption">Qt風: 標準部品、表、ツールバー、分割ペインで長時間作業する業務画面に寄せる。</figcaption>
+    </figure>
+    <p>AI生成UIでは、この指定にすると巨大なカードやLP風の余白が減り、表、ツールバー、分割ペインを中心にした「作業する画面」になりやすくなります。</p>
+
+    <h3>Material Designのサンプル: 状態とアクションが見えるモバイル/Webアプリ</h3>
+    <p>Material Designは、コンポーネント、色、タイポグラフィ、モーション、状態などを体系化したデザインシステムです。操作可能な要素、選択状態、エラー、読み込み、画面遷移を明確に見せるのが得意です。</p>
+    <figure class="architecture-figure ui-sample-figure">
+      <img src="assets/material-support-mobile.png" alt="Material Design風の顧客問い合わせモバイル画面。紫のトップアプリバー、状態チップ、カード、Floating Action Button、下部シートがある。">
+      <figcaption class="figure-caption">Material Design: 状態チップ、カード、FAB、Bottom sheetで操作と状態を視覚的に見せる。</figcaption>
+    </figure>
+    <p>Material風にすると、タップ領域、状態変化、画面遷移が整理されます。一方でAIはカードを増やしがちなので、業務画面ではカードの使いどころを限定した方がよいです。</p>
+
+    <h3>Apple HIGのサンプル: 内容を主役にした軽い操作画面</h3>
+    <p>Apple Human Interface Guidelinesは、iOS、iPadOS、macOSなどのプラットフォームらしい操作、階層、余白、入力、アクセシビリティを扱います。画面そのものを飾るより、ユーザーの内容と自然な操作を主役にする方向です。</p>
+    <figure class="architecture-figure ui-sample-figure">
+      <img src="assets/apple-hig-inbox.png" alt="Apple HIG風の顧客問い合わせ画面。淡いサイドバー、問い合わせリスト、広い詳細ペイン、返信フォームを持つ内容中心のデスクトップアプリ。">
+      <figcaption class="figure-caption">Apple HIG: 装飾を抑え、内容、階層、自然な操作を主役にする。</figcaption>
+    </figure>
+    <p>Apple HIG風にすると、情報密度よりも読みやすさと自然な操作が前に出ます。業務用の大量処理画面より、個人の作業、確認、編集、返信に向いた見え方になります。</p>
+
+    <h3>Fluent 2のサンプル: Microsoft 365風の共同作業画面</h3>
+    <p>Fluent 2は、Microsoft 365やTeamsのような業務アプリで、一貫したコンポーネント、アクセシビリティ、共同作業の流れを作るためのデザインシステムです。大量の情報を扱いながら、コマンド、ナビゲーション、詳細ペインを整理するのに向いています。</p>
+    <figure class="architecture-figure ui-sample-figure">
+      <img src="assets/fluent-support-dashboard.png" alt="Fluent 2風の顧客問い合わせ業務画面。左ナビゲーション、コマンドバー、データグリッド、詳細ペイン、コメント欄がある。">
+      <figcaption class="figure-caption">Fluent 2: Command bar、Data grid、詳細ペインでチームの共同作業を整理する。</figcaption>
+    </figure>
+    <p>Fluent 2風にすると、表、コマンドバー、詳細ペイン、共同作業のUIが自然に出ます。Microsoft系の業務環境に馴染ませたいときに使いやすい方向です。</p>
+
+    <h2>3. ガイドラインごとの違い</h2>
     <table>
-      <thead><tr><th>作りたいもの</th><th>まず試す指定</th><th>理由</th></tr></thead>
+      <thead><tr><th>観点</th><th>Qt風</th><th>Material</th><th>Apple HIG</th><th>Fluent 2</th></tr></thead>
       <tbody>
-        <tr><td>社内管理画面、CRUD、一覧・詳細・フォーム</td><td>Qt風、Fluent</td><td>情報密度と標準部品が必要だから</td></tr>
-        <tr><td>個人用の実用ツール</td><td>Qt風</td><td>派手さよりも使いやすさと落ち着きが出やすいから</td></tr>
-        <tr><td>モバイル前提のサービス</td><td>Material Design、Apple HIG</td><td>タップ領域、画面遷移、状態表現を寄せやすいから</td></tr>
-        <tr><td>Microsoft 365連携やTeams風UI</td><td>Fluent 2</td><td>既存の業務アプリ利用者に馴染みやすいから</td></tr>
-        <tr><td>LPやブランドサイト</td><td>Qt風は第一候補にしない</td><td>Qt風は業務ツール寄りで、華やかな訴求には弱いから</td></tr>
+        <tr><td>情報密度</td><td>高め</td><td>中程度</td><td>低〜中程度</td><td>中〜高め</td></tr>
+        <tr><td>主な部品</td><td>表、ツールバー、ツリー、タブ</td><td>App bar、カード、チップ、FAB</td><td>リスト、サイドバー、ツールバー、シート</td><td>Command bar、Data grid、Navigation、Details pane</td></tr>
+        <tr><td>強み</td><td>作業効率と安定感</td><td>状態表現とモバイル適性</td><td>内容重視と自然な操作</td><td>業務アプリと共同作業</td></tr>
+        <tr><td>AIでの注意</td><td>古いWindows風に寄りすぎることがある</td><td>カード過多になりやすい</td><td>余白が広すぎることがある</td><td>Microsoft風の見た目だけを真似しがち</td></tr>
       </tbody>
     </table>
 
-    <h2>3. AIにはこんなふうに渡すとよい</h2>
-    <p>ガイドライン名だけでも効くことはありますが、実務では「どのガイドラインに従うか」と「どの要素を守るか」をセットで渡す方が安定します。</p>
+    <h2>4. AIに渡すなら短くてよい</h2>
+    <p>使い方は長いプロンプト集にしなくても十分です。重要なのは、ガイドライン名だけで終わらせず、何をそのガイドラインから借りるのかを一言添えることです。</p>
+    <pre><code>顧客問い合わせ管理画面を作ってください。
+Fluent 2を参考にし、Command bar、Data grid、詳細ペイン、キーボード操作、focus順を重視してください。
+派手なLP風ではなく、Microsoft 365系の業務アプリに近い密度にしてください。</code></pre>
 
-    <h3>基本テンプレート</h3>
-    <pre><code>以下のUIを作ってください。
-
-デザイン方針:
-- [Qt風 / Material Design / Apple HIG / Fluent 2] を参考にする
-- ただし、ブランド模倣ではなく、レイアウト・余白・部品・状態表現の原則を使う
-
-守ること:
-- 画面の主目的を1つにする
-- Primary / Secondary / Destructive を明確に分ける
-- hover / focus / disabled / loading / error の状態を用意する
-- 余白、整列、境界線で情報階層を作る
-- 色だけで状態を伝えない
-- キーボード操作とアクセシビリティを考慮する
-
-避けること:
-- 巨大カードの乱用
-- 過剰な角丸
-- 派手なグラデーション
-- 装飾目的の強い影
-- 余白が広すぎるランディングページ風の見た目</code></pre>
-
-    <h3>Qt風に寄せたい場合</h3>
-    <pre><code>このUIを、Qt風の成熟したデスクトップアプリの見た目で作ってください。
-
-重要:
-- ランディングページ風にしない
-- ツールバー、パネル、表、フォーム、ステータスバーを使う
-- 背景はニュートラル、境界線と余白で階層を作る
-- Primaryボタンは1画面に1つ程度
-- 8px単位の余白で整列する
-- 業務アプリとして長時間使っても疲れない情報密度にする
-- hover / focus / disabled / selected / loading / error状態を定義する</code></pre>
-
-    <h3>Material Designに寄せたい場合</h3>
-    <pre><code>Material Designを参考にしてください。
-
-ただし:
-- カードを増やしすぎない
-- elevationは情報階層を示す目的に限定する
-- タップ領域、状態変化、入力エラーを明確にする
-- Primary色は主要アクションに限定する</code></pre>
-
-    <h3>Fluentに寄せたい場合</h3>
-    <pre><code>Fluent 2 Design Systemを参考にした業務アプリUIにしてください。
-
-重視すること:
-- コマンドバー、ナビゲーション、表、詳細ペインを自然に配置する
-- Microsoft 365系の業務ツールのような落ち着いた密度にする
-- アクセシビリティ、focus order、状態表現を明確にする</code></pre>
-
-    <h2>4. なぜAI生成UIは安っぽく見えやすいのか</h2>
-    <table>
-      <thead><tr><th>よくある出力</th><th>安っぽく見える理由</th><th>直す方向</th></tr></thead>
-      <tbody>
-        <tr><td>巨大な角丸カードを多用する</td><td>情報密度が低く、部品の役割が曖昧になる</td><td>カードを必要な単位に限定し、表・ツールバー・リストを使う</td></tr>
-        <tr><td>派手なグラデーションと影</td><td>装飾が情報より目立つ</td><td>背景は控えめにし、強調色は操作や状態に限定する</td></tr>
-        <tr><td>余白が大きすぎる</td><td>業務ツールとしての密度が足りない</td><td>8px単位などの余白ルールを決め、コンパクトにする</td></tr>
-        <tr><td>ボタンの優先順位が全部同じ</td><td>次に何をすべきか分からない</td><td>Primary / Secondary / Destructiveを明確に分ける</td></tr>
-        <tr><td>フォームや表の整列が甘い</td><td>プロっぽさが失われる</td><td>ラベル、入力欄、数値、アクションを揃える</td></tr>
-        <tr><td>状態表現が弱い</td><td>操作可能、読み込み中、無効、エラーが区別できない</td><td>hover、focus、disabled、loading、errorを明示する</td></tr>
-      </tbody>
-    </table>
-
-    <h2>5. Qt風デザインが効く理由</h2>
-    <p>QtはクロスプラットフォームのGUIフレームワークで、デスクトップアプリケーションの文脈が強いです。AIに「Qt風」と指定すると、次のような方向へ寄りやすくなります。</p>
-
-    <ul>
-      <li>WebのLPではなく、実用アプリの画面として構成する。</li>
-      <li>ツールバー、メニュー、パネル、表、フォームなど標準的な部品を使う。</li>
-      <li>色や影を控えめにし、操作対象と情報を優先する。</li>
-      <li>余白、境界線、区切り、整列で階層を作る。</li>
-      <li>情報密度を上げても破綻しないレイアウトにする。</li>
-      <li>派手さよりも、安定感、実用性、OSネイティブ感を優先する。</li>
-    </ul>
-
-    <div class="callout">
-      <strong>実務での解釈</strong>
-      <p>「Qt風」は、見た目のブランド名というより「業務アプリらしい制約」をAIへ入れるためのショートカットです。</p>
-    </div>
-
-    <h2>6. UIガイドラインとしてAIに渡す具体項目</h2>
-    <p>ガイドライン名だけで足りない場合は、以下の観点を明示します。</p>
-
-    <table>
-      <thead><tr><th>観点</th><th>指示する内容</th><th>避けるもの</th></tr></thead>
-      <tbody>
-        <tr><td>レイアウト</td><td>ヘッダー、サイドバー、ツールバー、メイン領域、詳細ペインを明確に分ける</td><td>全部をカードの羅列にする</td></tr>
-        <tr><td>余白</td><td>8px単位で余白を揃え、関連要素は近づける</td><td>意味なく広い余白</td></tr>
-        <tr><td>色</td><td>中立色をベースにし、Accentは主要操作や状態だけに使う</td><td>全面グラデーション、過剰な彩度</td></tr>
-        <tr><td>タイポグラフィ</td><td>見出し、ラベル、本文、補足のサイズ差を控えめにする</td><td>巨大見出し、太字の乱用</td></tr>
-        <tr><td>コンポーネント</td><td>OS/デスクトップアプリ風の標準部品を使う</td><td>独自すぎるボタンや入力欄</td></tr>
-        <tr><td>状態</td><td>hover、focus、active、disabled、loading、errorを定義する</td><td>通常状態だけ作る</td></tr>
-        <tr><td>情報密度</td><td>表、リスト、フィルタ、詳細ペインで効率よく見せる</td><td>1項目1巨大カード</td></tr>
-        <tr><td>アクセシビリティ</td><td>キーボード操作、focus ring、コントラスト、ラベルを確保する</td><td>色だけで意味を伝える</td></tr>
-      </tbody>
-    </table>
-
-    <h2>7. Qt風に寄せる具体ルール</h2>
-    <h3>1. レイアウトはアプリケーション構造にする</h3>
-    <pre><code>画面は以下の構造にしてください。
-- 上部: タイトルバーまたはツールバー
-- 左: ナビゲーションまたはフィルタペイン
-- 中央: 表、一覧、フォームなど主要作業領域
-- 右: 選択項目の詳細ペイン
-- 下部: ステータスバーまたは補足情報</code></pre>
-
-    <h3>2. 色は控えめにする</h3>
-    <pre><code>色はQt風のデスクトップアプリとして控えめにしてください。
-- 背景は薄いニュートラル
-- 境界線で区切る
-- Primary色は主要アクションだけに使う
-- 危険操作は赤系で明確にする
-- 装飾目的のグラデーションは使わない</code></pre>
-
-    <h3>3. 部品の役割を明確にする</h3>
-    <pre><code>以下のコンポーネントを標準的なデスクトップアプリ風にしてください。
-- Toolbar
-- Menu button
-- Table
-- Tree view
-- Form field
-- Dialog
-- Tabs
-- Status bar
-
-各部品に hover / focus / disabled / selected の状態を用意してください。</code></pre>
-
-    <h3>4. 密度を上げる</h3>
-    <pre><code>業務ツールとして使える情報密度にしてください。
-カードを多用せず、表・リスト・ペインを使ってください。
-余白は8px単位で揃え、要素間の関係が分かるようにしてください。</code></pre>
-
-    <h2>8. AI生成UIレビューのチェックリスト</h2>
+    <h2>5. AI生成UIレビューのチェックリスト</h2>
     <ul>
       <li>画面の主目的が1つに見えるか。</li>
       <li>PrimaryアクションとSecondaryアクションが区別できるか。</li>
@@ -194,16 +99,12 @@
       <li>OSネイティブ風にするなら、独自部品を増やしすぎていないか。</li>
     </ul>
 
-    <h2>9. 参考記事の内容</h2>
-    <p>参考記事では、AIにフロントエンドを生成させると「指定したスタイル + 安っぽさ」になりがちだが、「Qtアプリのように見せて」と指定すると、その安っぽさが大きく減ったという観察が紹介されています。</p>
-    <p>この話は興味深いですが、主観的な実験です。実務で使うなら「Qt風」という言葉だけに頼らず、Qtのような成熟したUIガイドラインが持つ具体的な制約をプロンプトや実装ルールに落とすのが重要です。</p>
-
-    <h2>10. 記事から得るべきポイント</h2>
-    <p>元記事の価値は「Qtと書けば万能」という話ではありません。AIは曖昧なデザイン指示を受けると、学習データ上の平均的で派手なWeb UIへ寄りがちです。そこで、Qt Quick Controls GuidelinesやMaterial、Apple HIG、Fluentのような確立済みUIガイドライン名を使うと、AIにまとまった制約セットを渡せます。</p>
+    <h2>6. まとめ</h2>
+    <p>ガイドラインを使う目的は、特定ブランドの見た目をコピーすることではありません。Qtなら密度と標準部品、Materialなら状態とアクション、Apple HIGなら内容中心の自然な操作、Fluent 2なら業務アプリと共同作業というように、画面の判断基準をAIへ渡すことです。</p>
 
     <div class="callout">
       <strong>実務上の結論</strong>
-      <p>AI生成UIを安っぽくしないコツは、「かっこよく」ではなく「どのガイドラインに従うか」と「どの部品・余白・状態・密度にするか」を具体的に指示することです。Qt風は、特に業務ツールや個人用管理画面で効きやすい指定です。</p>
+      <p>AI生成UIを整えるときは、作りたい画面の用途に近いガイドラインを選び、そのガイドラインらしい部品、密度、状態表現、ナビゲーションを指定します。画像で完成形の方向を見せると、文字だけで指示するよりも意図が伝わりやすくなります。</p>
     </div>
 
     <h2>参照元</h2>

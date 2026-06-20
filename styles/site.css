@@ -251,6 +251,13 @@ select {
   height: auto;
 }
 
+.ui-sample-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
 .architecture-figure text {
   font-family: "Noto Sans JP", "Yu Gothic UI", sans-serif;
   fill: var(--ink);
