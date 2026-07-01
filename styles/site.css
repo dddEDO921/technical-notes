@@ -387,9 +387,9 @@ th, td {
   }
   .note-card {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto auto 1fr;
     align-items: center;
-    column-gap: 10px;
+    column-gap: 8px;
     min-height: 0;
     padding: 14px 2px;
     border-width: 0 0 1px;
@@ -431,10 +431,30 @@ th, td {
     font-weight: 700;
     line-height: 1.55;
   }
-  .kind { display: none; }
-  .tag {
+  .kind {
     grid-row: 1;
     grid-column: 1;
+    color: color-mix(in srgb, var(--muted) 70%, white);
+    font-size: .64rem;
+    letter-spacing: .04em;
+  }
+  .note-card[data-kind="note"] .kind {
+    font-size: 0;
+  }
+  .note-card[data-kind="note"] .kind::before {
+    content: "NOTE";
+    font-size: .64rem;
+  }
+  .note-card[data-kind="source"] .kind {
+    font-size: 0;
+  }
+  .note-card[data-kind="source"] .kind::before {
+    content: "LINK";
+    font-size: .64rem;
+  }
+  .tag {
+    grid-row: 1;
+    grid-column: 2;
     justify-self: start;
     color: color-mix(in srgb, var(--accent) 78%, var(--muted));
   }
