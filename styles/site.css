@@ -373,7 +373,7 @@ th, td {
   }
   .note-card {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto auto 1fr;
     align-items: center;
     column-gap: 6px;
     min-height: 0;
@@ -384,6 +384,7 @@ th, td {
   .note-card h2 {
     display: -webkit-box;
     grid-column: 1 / -1;
+    grid-row: 2;
     overflow: hidden;
     margin: 7px 0 0;
     font-size: 1rem;
@@ -395,7 +396,9 @@ th, td {
     display: none;
   }
   .note-card time {
+    grid-row: 1;
     grid-column: 3;
+    justify-self: end;
     margin-top: 0;
     padding-top: 0;
     color: var(--muted);
@@ -413,8 +416,8 @@ th, td {
     font-size: .7rem;
     line-height: 1.55;
   }
-  .kind { grid-column: 1; }
-  .tag { grid-column: 2; justify-self: start; }
+  .kind { grid-row: 1; grid-column: 1; }
+  .tag { grid-row: 1; grid-column: 2; justify-self: start; }
   .diagram { grid-template-columns: 1fr; }
   .layer-row { grid-template-columns: 1fr; }
   .flow-arrows { margin-left: 0; grid-template-columns: 1fr; }
