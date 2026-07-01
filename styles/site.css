@@ -346,8 +346,66 @@ th, td {
 .footer { padding: 0 0 40px; color: var(--muted); font-size: .84rem; }
 
 @media (max-width: 650px) {
-  .site-header { padding-top: 38px; }
-  .toolbar { grid-template-columns: 1fr; }
+  .site-header { padding: 22px 0 14px; }
+  .eyebrow { margin-bottom: 4px; font-size: .68rem; }
+  h1 { font-size: 1.7rem; }
+  .lead {
+    display: none;
+  }
+  .toolbar {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 16px 0 14px;
+  }
+  .toolbar input { grid-column: 1 / -1; }
+  input,
+  select {
+    min-width: 0;
+    padding: 9px 10px;
+    border-radius: 8px;
+    font-size: .9rem;
+    line-height: 1.45;
+  }
+  .note-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding-bottom: 48px;
+  }
+  .note-card {
+    display: block;
+    min-height: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    box-shadow: none;
+  }
+  .note-card h2 {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 7px 0 3px;
+    font-size: 1rem;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  .note-card p {
+    display: none;
+  }
+  .note-card time {
+    display: inline-block;
+    margin-top: 4px;
+    padding-top: 0;
+    font-size: .76rem;
+    line-height: 1.35;
+  }
+  .kind,
+  .tag {
+    display: inline-block;
+    margin-right: 6px;
+    margin-bottom: 0;
+    padding: 2px 7px;
+    font-size: .7rem;
+    line-height: 1.55;
+  }
   .diagram { grid-template-columns: 1fr; }
   .layer-row { grid-template-columns: 1fr; }
   .flow-arrows { margin-left: 0; grid-template-columns: 1fr; }
