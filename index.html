@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Codexと育てる、個人用の知識インデックス">
   <title>Knowledge Index | Technical Notes</title>
-  <link rel="stylesheet" href="styles/site.css?v=20260701-mobile-list">
+  <link rel="stylesheet" href="styles/site.css?v=20260701-month-list">
 </head>
 <body>
   <header class="site-header">
@@ -33,6 +33,7 @@
     </div>
 
     <section class="note-grid" id="notes" aria-label="知識インデックス">
+      <h2 class="month-heading" data-month="2026-06">2026年6月</h2>
       <a class="note-card" href="notes/2026-06-19-ui-guidelines-for-ai-generated-ui/" data-kind="note" data-title="AI生成UIに効くUIガイドライン" data-category="frontend" data-keywords="ai generated ui qt human interface guidelines material fluent apple design system slop desktop app typography layout spacing">
         <span class="kind">解説ノート</span>
         <span class="tag">フロントエンド</span>
@@ -128,6 +129,7 @@
     const kind = document.querySelector("#kind");
     const category = document.querySelector("#category");
     const cards = [...document.querySelectorAll(".note-card")];
+    const monthHeadings = [...document.querySelectorAll(".month-heading")];
     const empty = document.querySelector("#empty");
 
     function filterNotes() {
@@ -141,6 +143,15 @@
           (!category.value || card.dataset.category === category.value);
         card.hidden = !matches;
         if (matches) visible += 1;
+      });
+      monthHeadings.forEach((heading) => {
+        const nextCards = [];
+        let node = heading.nextElementSibling;
+        while (node && !node.classList.contains("month-heading")) {
+          if (node.classList.contains("note-card")) nextCards.push(node);
+          node = node.nextElementSibling;
+        }
+        heading.hidden = !nextCards.some((card) => !card.hidden);
       });
       empty.style.display = visible ? "none" : "block";
     }

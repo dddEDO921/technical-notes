@@ -86,6 +86,14 @@ select {
   padding-bottom: 72px;
 }
 
+.month-heading {
+  grid-column: 1 / -1;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 800;
+}
+
 .note-card,
 .article,
 .callout,
@@ -371,6 +379,12 @@ th, td {
     gap: 0;
     padding-bottom: 48px;
   }
+  .month-heading {
+    margin: 24px 0 4px;
+    color: var(--muted);
+    font-size: .78rem;
+    letter-spacing: .04em;
+  }
   .note-card {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -393,7 +407,7 @@ th, td {
     grid-row: 2;
     overflow: hidden;
     margin: 5px 0 0;
-    font-size: .98rem;
+    font-size: .97rem;
     font-weight: 700;
     line-height: 1.45;
     -webkit-box-orient: vertical;
@@ -403,16 +417,7 @@ th, td {
     display: none;
   }
   .note-card time {
-    grid-row: 1;
-    grid-column: 2;
-    justify-self: end;
-    margin-top: 0;
-    padding-top: 0;
-    color: color-mix(in srgb, var(--muted) 72%, white);
-    font-size: .7rem;
-    line-height: 1.35;
-    text-align: right;
-    white-space: nowrap;
+    display: none;
   }
   .kind,
   .tag {
