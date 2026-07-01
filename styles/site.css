@@ -368,41 +368,48 @@ th, td {
   }
   .note-grid {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 0;
     padding-bottom: 48px;
   }
   .note-card {
     display: grid;
-    grid-template-columns: auto auto 1fr;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    column-gap: 6px;
+    column-gap: 10px;
     min-height: 0;
-    padding: 10px 12px;
-    border-radius: 10px;
+    padding: 14px 2px;
+    border-width: 0 0 1px;
+    border-radius: 0;
+    background: transparent;
     box-shadow: none;
+  }
+  .note-card:hover {
+    transform: none;
+    border-color: var(--line);
   }
   .note-card h2 {
     display: -webkit-box;
     grid-column: 1 / -1;
     grid-row: 2;
     overflow: hidden;
-    margin: 7px 0 0;
-    font-size: 1rem;
-    line-height: 1.35;
+    margin: 5px 0 0;
+    font-size: .98rem;
+    font-weight: 700;
+    line-height: 1.45;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
+    -webkit-line-clamp: 2;
   }
   .note-card p {
     display: none;
   }
   .note-card time {
     grid-row: 1;
-    grid-column: 3;
+    grid-column: 2;
     justify-self: end;
     margin-top: 0;
     padding-top: 0;
-    color: var(--muted);
-    font-size: .76rem;
+    color: color-mix(in srgb, var(--muted) 72%, white);
+    font-size: .7rem;
     line-height: 1.35;
     text-align: right;
     white-space: nowrap;
@@ -412,12 +419,20 @@ th, td {
     display: inline-block;
     margin-right: 6px;
     margin-bottom: 0;
-    padding: 2px 7px;
-    font-size: .7rem;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: .68rem;
+    font-weight: 700;
     line-height: 1.55;
   }
-  .kind { grid-row: 1; grid-column: 1; }
-  .tag { grid-row: 1; grid-column: 2; justify-self: start; }
+  .kind { display: none; }
+  .tag {
+    grid-row: 1;
+    grid-column: 1;
+    justify-self: start;
+    color: color-mix(in srgb, var(--accent) 78%, var(--muted));
+  }
   .diagram { grid-template-columns: 1fr; }
   .layer-row { grid-template-columns: 1fr; }
   .flow-arrows { margin-left: 0; grid-template-columns: 1fr; }
