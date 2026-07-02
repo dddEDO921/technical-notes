@@ -1,5 +1,15 @@
 [
   {
+    "kind": "note",
+    "href": "notes/2026-07-02-kubernetes-pod-lifecycle/",
+    "title": "Kubernetes Podライフサイクルを実務目線で理解する",
+    "category": "infrastructure",
+    "categoryLabel": "インフラ",
+    "summary": "Pod phase、コンテナ状態、再起動、Probe、終了処理を分けて、STATUS表示の読み方を整理。",
+    "date": "2026-07-02",
+    "keywords": "kubernetes pod lifecycle phase pending running succeeded failed unknown container state waiting terminated crashloopbackoff imagepullbackoff probe readiness liveness startup restartpolicy termination"
+  },
+  {
     "kind": "source",
     "source": "zenn-tech-blog",
     "sourceLabel": "Zenn / Tech Blog",
