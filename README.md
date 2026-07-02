@@ -8,8 +8,8 @@ Codex App から疑問を投げて作る解説ノートと、後で参照した�
 2. Codex App でこのリポジトリを開きます。
 3. 解説ページを作る場合は、`質問: OAuth の PKCE は何を防ぐの？` のように依頼します。
 4. 外部資料を管理したい場合は、URLと必要ならカテゴリを渡します。この場合は原則として個別ページを作らず、トップページの一覧に登録します。
-5. Codex が追加した一覧項目、ノート、参照元を確認します。
-6. 問題なければコミット・pushします。GitHub Pages が自動更新されます。
+5. Codex が追加した一覧項目、ノート、参照元を検証します。
+6. 検証に問題がなければ、Codex が対象ファイルだけを commit・pushします。GitHub Pages が自動更新されます。
 
 ローカル確認は `python -m http.server 8000` を実行し、`http://localhost:8000` を開きます。
 
@@ -26,4 +26,4 @@ gh repo create technical-notes --public --source=. --remote=origin --push
 
 初回push後、`.github/workflows/static.yml` がGitHub Pagesへ自動デプロイします。リポジトリの **Settings → Pages** で Source が **GitHub Actions** になっていることを確認してください。
 
-このサイトには質問内容、生成したノート、登録した外部URLが公開されます。秘密情報や個人情報、未公開URLが含まれていないことを、push前に必ず確認してください。
+このサイトには質問内容、生成したノート、登録した外部URLが公開されます。秘密情報や個人情報、未公開URLが含まれていないことを、作成依頼時点で必ず確認してください。
