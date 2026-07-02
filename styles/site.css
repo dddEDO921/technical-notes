@@ -124,7 +124,8 @@ select {
 .note-card time { margin-top: auto; padding-top: 20px; color: var(--muted); font-size: .82rem; }
 
 .kind,
-.tag {
+.tag,
+.source-label {
   align-self: flex-start;
   padding: 3px 9px;
   border-radius: 999px;
@@ -141,6 +142,11 @@ select {
 .tag {
   color: var(--accent);
   background: var(--accent-soft);
+}
+
+.source-label {
+  color: var(--muted);
+  background: #f0ece3;
 }
 
 .article {
@@ -420,7 +426,8 @@ th, td {
     display: none;
   }
   .kind,
-  .tag {
+  .tag,
+  .source-label {
     display: inline-block;
     margin-right: 6px;
     margin-bottom: 0;
@@ -457,6 +464,14 @@ th, td {
     grid-column: 2;
     justify-self: start;
     color: color-mix(in srgb, var(--accent) 78%, var(--muted));
+  }
+  .source-label {
+    grid-row: 1;
+    grid-column: 3;
+    justify-self: start;
+    color: color-mix(in srgb, var(--muted) 82%, white);
+    font-size: .66rem;
+    font-weight: 700;
   }
   .diagram { grid-template-columns: 1fr; }
   .layer-row { grid-template-columns: 1fr; }

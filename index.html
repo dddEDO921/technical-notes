@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Codexと育てる、個人用の知識インデックス">
   <title>Knowledge Index | Technical Notes</title>
-  <link rel="stylesheet" href="styles/site.css?v=20260701-kind-list">
+  <link rel="stylesheet" href="styles/site.css?v=20260702-source-label">
 </head>
 <body>
   <header class="site-header">
@@ -34,16 +34,18 @@
 
     <section class="note-grid" id="notes" aria-label="知識インデックス">
       <h2 class="month-heading" data-month="2026-07">2026年7月</h2>
-      <a class="note-card" href="https://zenn.dev/rehabforjapan/articles/html-design-doc-workflow-claude-code-202605" data-kind="source" data-title="設計資料をHTMLで回す - 生成・レビュー・社内共有のワークフロー" data-category="workflow" data-keywords="zenn rehab tech blog html design doc workflow claude code review prompt comments cloudfront s3 cognito">
+      <a class="note-card" href="https://zenn.dev/rehabforjapan/articles/html-design-doc-workflow-claude-code-202605" data-kind="source" data-source="zenn-tech-blog" data-title="設計資料をHTMLで回す - 生成・レビュー・社内共有のワークフロー" data-category="workflow" data-keywords="zenn rehab tech blog html design doc workflow claude code review prompt comments cloudfront s3 cognito">
         <span class="kind">外部資料</span>
         <span class="tag">ワークフロー</span>
+        <span class="source-label">Zenn / Tech Blog</span>
         <h2>設計資料をHTMLで回す - 生成・レビュー・社内共有のワークフロー</h2>
         <p>Zenn / Rehab Tech Blog。HTML設計資料のコメントを修正プロンプト化し、認証付き基盤で共有する実践例。</p>
         <time datetime="2026-07-01">確認日: 2026-07-01</time>
       </a>
-      <a class="note-card" href="https://zenn.dev/higakijin/articles/06276828c81546" data-kind="source" data-title="標準CSSは美しくなった、もはやTailwindは不要" data-category="frontend" data-keywords="zenn css tailwind bootstrap daisyui openprops nesting has is where custom properties frontend">
+      <a class="note-card" href="https://zenn.dev/higakijin/articles/06276828c81546" data-kind="source" data-source="zenn" data-title="標準CSSは美しくなった、もはやTailwindは不要" data-category="frontend" data-keywords="zenn css tailwind bootstrap daisyui openprops nesting has is where custom properties frontend">
         <span class="kind">外部資料</span>
         <span class="tag">フロントエンド</span>
+        <span class="source-label">Zenn</span>
         <h2>標準CSSは美しくなった、もはやTailwindは不要</h2>
         <p>Zenn / ハルク。CSSネストや新しいセレクタ、カスタムプロパティを使い、HTMLを汚さず標準CSSで書く考え方。</p>
         <time datetime="2026-07-02">確認日: 2026-07-02</time>
@@ -151,7 +153,7 @@
       const query = search.value.trim().toLowerCase();
       let visible = 0;
       cards.forEach((card) => {
-        const text = `${card.dataset.title} ${card.dataset.keywords}`.toLowerCase();
+        const text = `${card.dataset.title} ${card.dataset.keywords} ${card.dataset.source || ""}`.toLowerCase();
         const matches =
           text.includes(query) &&
           (!kind.value || card.dataset.kind === kind.value) &&
