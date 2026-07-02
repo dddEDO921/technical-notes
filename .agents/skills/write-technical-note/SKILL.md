@@ -18,7 +18,7 @@ description: ユーザーが「質問:」「質問：」で始める疑問を投
 5. 図解は HTML/CSS、表、コード、またはインライン SVG で作る。装飾目的だけの図は不要。
 6. 読者が結論と根拠を区別できるように書く。不確かな点、前提、調査日を明示する。
 7. 参照元にはページ名、提供元、URL、確認日を記載する。
-8. ルートの `index.html` の共通知識インデックスに新しい解説ノートカードを先頭追加する。`data-title`、`data-category`、`data-kind="note"`、`data-keywords` を設定する。
+8. `data/index-items.json` の共通知識インデックスに新しい解説ノート項目を追加する。`kind`、`href`、`title`、`category`、`categoryLabel`、`summary`、`date`、`keywords` を設定する。
 9. 相対リンクと表示を検証する。
 10. `AGENTS.md` の Publish flow に従い、対象ファイルだけを commit して `main` へ push する。検証で問題がある場合や作業対象外の差分を切り分けられない場合は push しない。
 

@@ -1,0 +1,148 @@
+[
+  {
+    "kind": "source",
+    "source": "zenn-tech-blog",
+    "sourceLabel": "Zenn / Tech Blog",
+    "href": "https://zenn.dev/rehabforjapan/articles/html-design-doc-workflow-claude-code-202605",
+    "title": "設計資料をHTMLで回す - 生成・レビュー・社内共有のワークフロー",
+    "category": "workflow",
+    "categoryLabel": "ワークフロー",
+    "summary": "Zenn / Rehab Tech Blog。HTML設計資料のコメントを修正プロンプト化し、認証付き基盤で共有する実践例。",
+    "date": "2026-07-01",
+    "dateLabel": "確認日: 2026-07-01",
+    "keywords": "zenn rehab tech blog html design doc workflow claude code review prompt comments cloudfront s3 cognito"
+  },
+  {
+    "kind": "source",
+    "source": "zenn",
+    "sourceLabel": "Zenn",
+    "href": "https://zenn.dev/higakijin/articles/06276828c81546",
+    "title": "標準CSSは美しくなった、もはやTailwindは不要",
+    "category": "frontend",
+    "categoryLabel": "フロントエンド",
+    "summary": "Zenn / ハルク。CSSネストや新しいセレクタ、カスタムプロパティを使い、HTMLを汚さず標準CSSで書く考え方。",
+    "date": "2026-07-02",
+    "dateLabel": "確認日: 2026-07-02",
+    "keywords": "zenn css tailwind bootstrap daisyui openprops nesting has is where custom properties frontend"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-19-ui-guidelines-for-ai-generated-ui/",
+    "title": "AI生成UIに効くUIガイドライン",
+    "category": "frontend",
+    "categoryLabel": "フロントエンド",
+    "summary": "Qt風指定が効く理由を、実装で使えるレイアウト・余白・色・部品ルールとして整理。",
+    "date": "2026-06-19",
+    "keywords": "ai generated ui qt human interface guidelines material fluent apple design system slop desktop app typography layout spacing"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-18-argocd-bluegreen-deployment/",
+    "title": "Argo CDのBlue-GreenデプロイをKubernetes用語で理解する",
+    "category": "infrastructure",
+    "categoryLabel": "インフラ",
+    "summary": "Argo RolloutsのactiveService/previewService切り替えをService・ReplicaSet・Podで説明。",
+    "date": "2026-06-18",
+    "keywords": "argocd argo rollouts blue green deployment kubernetes service rollout replicasets pods activeService previewService promotion"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-18-ai-system-layer-architecture/",
+    "title": "AIシステムをレイヤーで見る",
+    "category": "ai-development",
+    "categoryLabel": "AI開発",
+    "summary": "LLMを一部品として扱い、UI・アプリ・検索・業務API・運用で責務を分ける見方。",
+    "date": "2026-06-18",
+    "keywords": "ai system architecture layers llm rag tool calling application data operations observability security evaluation"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-16-morphos-usage-guide/",
+    "title": "Morphos / Morphousを迷わず使う",
+    "category": "ai-development",
+    "categoryLabel": "AI開発",
+    "summary": "自然モチーフの配色サイトを、AI指示・Web実装・資料作成で使う手順。",
+    "date": "2026-06-16",
+    "keywords": "morphos morphous color palette design system shadcn css powerpoint word ai prompt theme"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-16-ai-requirements-definition-history/",
+    "title": "AI要件定義の歴史と導入ステップ",
+    "category": "ai-development",
+    "categoryLabel": "AI開発",
+    "summary": "3年間の試行錯誤から見える、要件定義を文書作成からスコープ設計へ移す考え方。",
+    "date": "2026-06-16",
+    "keywords": "ai requirements definition gear indigo byok project as code scope design context codebase ai driven development"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-15-javascript-best-practices-antipatterns/",
+    "title": "JavaScriptの今使う書き方・避けたい書き方",
+    "category": "frontend",
+    "categoryLabel": "フロントエンド",
+    "summary": "varや==など、昔の書き方を現在の実装へ置き換える具体例。",
+    "date": "2026-06-15",
+    "keywords": "javascript best practices anti patterns var let const equality arguments xhr jquery eval document write modern legacy"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-15-modern-javascript-guide/",
+    "title": "モダンなJavaScript実装ガイド",
+    "category": "frontend",
+    "categoryLabel": "フロントエンド",
+    "summary": "標準API、モジュール、非同期処理、DOM、安全性、性能を実務視点で整理。",
+    "date": "2026-06-15",
+    "keywords": "modern javascript es modules async await promise abortcontroller fetch structuredclone typescript performance security testing frontend"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-11-argocd-guide/",
+    "title": "Argo CDをエンジニア向けに理解する",
+    "category": "infrastructure",
+    "categoryLabel": "インフラ",
+    "summary": "GitOpsの考え方、継続的な収束、構成要素、同期戦略、実運用の注意点。",
+    "date": "2026-06-11",
+    "keywords": "argocd argo cd gitops kubernetes continuous delivery reconciliation application applicationset helm kustomize sync"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-11-modern-web-guidance/",
+    "title": "Modern Web Guidanceとは？",
+    "category": "ai-development",
+    "categoryLabel": "AI開発",
+    "summary": "AIが古いWeb実装を選ぶ問題と、Google公式スキルによる改善方法。",
+    "date": "2026-06-11",
+    "keywords": "modern web guidance google chrome codex skill css javascript baseline accessibility performance ai coding agent"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-10-oauth2-guide/",
+    "title": "OAuth 2.0を詳しく理解する",
+    "category": "security",
+    "categoryLabel": "セキュリティ",
+    "summary": "権限委譲の目的、登場人物、推奨フロー、トークン、安全な実装を図解。",
+    "date": "2026-06-10",
+    "keywords": "oauth oauth2 authorization code pkce access token refresh token scope oidc openid connect security"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-08-bearer-token/",
+    "title": "Bearerトークンって何？",
+    "category": "security",
+    "categoryLabel": "セキュリティ",
+    "summary": "「持っている人が使える」トークンの仕組みと、安全に扱うための注意点。",
+    "date": "2026-06-08",
+    "keywords": "bearer token oauth access token jwt authorization api security"
+  },
+  {
+    "kind": "note",
+    "href": "notes/2026-06-08-codex-note-workflow/",
+    "title": "Codex Appで知識インデックスを育てる",
+    "category": "workflow",
+    "categoryLabel": "ワークフロー",
+    "summary": "URL資料は一覧へ、疑問は解説ノートへ分けて蓄積する最小運用。",
+    "date": "2026-06-08",
+    "keywords": "codex html github pages knowledge notes index source url workflow"
+  }
+]

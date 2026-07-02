@@ -19,3 +19,4 @@ private/
 *.log
 tmp/
 work/
+.codex-remote-attachments/

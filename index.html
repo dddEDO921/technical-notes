@@ -6,6 +6,7 @@
   <meta name="description" content="Codexと育てる、個人用の知識インデックス">
   <title>Knowledge Index | Technical Notes</title>
   <link rel="stylesheet" href="styles/site.css?v=20260702-source-label">
+  <script src="scripts/index.js?v=20260702-render" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -32,150 +33,10 @@
       </select>
     </div>
 
-    <section class="note-grid" id="notes" aria-label="知識インデックス">
-      <h2 class="month-heading" data-month="2026-07">2026年7月</h2>
-      <a class="note-card" href="https://zenn.dev/rehabforjapan/articles/html-design-doc-workflow-claude-code-202605" data-kind="source" data-source="zenn-tech-blog" data-title="設計資料をHTMLで回す - 生成・レビュー・社内共有のワークフロー" data-category="workflow" data-keywords="zenn rehab tech blog html design doc workflow claude code review prompt comments cloudfront s3 cognito">
-        <span class="kind">外部資料</span>
-        <span class="tag">ワークフロー</span>
-        <span class="source-label">Zenn / Tech Blog</span>
-        <h2>設計資料をHTMLで回す - 生成・レビュー・社内共有のワークフロー</h2>
-        <p>Zenn / Rehab Tech Blog。HTML設計資料のコメントを修正プロンプト化し、認証付き基盤で共有する実践例。</p>
-        <time datetime="2026-07-01">確認日: 2026-07-01</time>
-      </a>
-      <a class="note-card" href="https://zenn.dev/higakijin/articles/06276828c81546" data-kind="source" data-source="zenn" data-title="標準CSSは美しくなった、もはやTailwindは不要" data-category="frontend" data-keywords="zenn css tailwind bootstrap daisyui openprops nesting has is where custom properties frontend">
-        <span class="kind">外部資料</span>
-        <span class="tag">フロントエンド</span>
-        <span class="source-label">Zenn</span>
-        <h2>標準CSSは美しくなった、もはやTailwindは不要</h2>
-        <p>Zenn / ハルク。CSSネストや新しいセレクタ、カスタムプロパティを使い、HTMLを汚さず標準CSSで書く考え方。</p>
-        <time datetime="2026-07-02">確認日: 2026-07-02</time>
-      </a>
-      <h2 class="month-heading" data-month="2026-06">2026年6月</h2>
-      <a class="note-card" href="notes/2026-06-19-ui-guidelines-for-ai-generated-ui/" data-kind="note" data-title="AI生成UIに効くUIガイドライン" data-category="frontend" data-keywords="ai generated ui qt human interface guidelines material fluent apple design system slop desktop app typography layout spacing">
-        <span class="kind">解説ノート</span>
-        <span class="tag">フロントエンド</span>
-        <h2>AI生成UIに効くUIガイドライン</h2>
-        <p>Qt風指定が効く理由を、実装で使えるレイアウト・余白・色・部品ルールとして整理。</p>
-        <time datetime="2026-06-19">2026-06-19</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-18-argocd-bluegreen-deployment/" data-kind="note" data-title="Argo CDのBlue-GreenデプロイをKubernetes用語で理解する" data-category="infrastructure" data-keywords="argocd argo rollouts blue green deployment kubernetes service rollout replicasets pods activeService previewService promotion">
-        <span class="kind">解説ノート</span>
-        <span class="tag">インフラ</span>
-        <h2>Argo CDのBlue-GreenデプロイをKubernetes用語で理解する</h2>
-        <p>Argo RolloutsのactiveService/previewService切り替えをService・ReplicaSet・Podで説明。</p>
-        <time datetime="2026-06-18">2026-06-18</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-18-ai-system-layer-architecture/" data-kind="note" data-title="AIシステムをレイヤーで見る" data-category="ai-development" data-keywords="ai system architecture layers llm rag tool calling application data operations observability security evaluation">
-        <span class="kind">解説ノート</span>
-        <span class="tag">AI開発</span>
-        <h2>AIシステムをレイヤーで見る</h2>
-        <p>LLMを一部品として扱い、UI・アプリ・検索・業務API・運用で責務を分ける見方。</p>
-        <time datetime="2026-06-18">2026-06-18</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-16-morphos-usage-guide/" data-kind="note" data-title="Morphos / Morphousを迷わず使う" data-category="ai-development" data-keywords="morphos morphous color palette design system shadcn css powerpoint word ai prompt theme">
-        <span class="kind">解説ノート</span>
-        <span class="tag">AI開発</span>
-        <h2>Morphos / Morphousを迷わず使う</h2>
-        <p>自然モチーフの配色サイトを、AI指示・Web実装・資料作成で使う手順。</p>
-        <time datetime="2026-06-16">2026-06-16</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-16-ai-requirements-definition-history/" data-kind="note" data-title="AI要件定義の歴史と導入ステップ" data-category="ai-development" data-keywords="ai requirements definition gear indigo byok project as code scope design context codebase ai driven development">
-        <span class="kind">解説ノート</span>
-        <span class="tag">AI開発</span>
-        <h2>AI要件定義の歴史と導入ステップ</h2>
-        <p>3年間の試行錯誤から見える、要件定義を文書作成からスコープ設計へ移す考え方。</p>
-        <time datetime="2026-06-16">2026-06-16</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-15-javascript-best-practices-antipatterns/" data-kind="note" data-title="JavaScriptの今使う書き方・避けたい書き方" data-category="frontend" data-keywords="javascript best practices anti patterns var let const equality arguments xhr jquery eval document write modern legacy">
-        <span class="kind">解説ノート</span>
-        <span class="tag">フロントエンド</span>
-        <h2>JavaScriptの今使う書き方・避けたい書き方</h2>
-        <p><code>var</code>や<code>==</code>など、昔の書き方を現在の実装へ置き換える具体例。</p>
-        <time datetime="2026-06-15">2026-06-15</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-15-modern-javascript-guide/" data-kind="note" data-title="モダンなJavaScript実装ガイド" data-category="frontend" data-keywords="modern javascript es modules async await promise abortcontroller fetch structuredclone typescript performance security testing frontend">
-        <span class="kind">解説ノート</span>
-        <span class="tag">フロントエンド</span>
-        <h2>モダンなJavaScript実装ガイド</h2>
-        <p>標準API、モジュール、非同期処理、DOM、安全性、性能を実務視点で整理。</p>
-        <time datetime="2026-06-15">2026-06-15</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-11-argocd-guide/" data-kind="note" data-title="Argo CDをエンジニア向けに理解する" data-category="infrastructure" data-keywords="argocd argo cd gitops kubernetes continuous delivery reconciliation application applicationset helm kustomize sync">
-        <span class="kind">解説ノート</span>
-        <span class="tag">インフラ</span>
-        <h2>Argo CDをエンジニア向けに理解する</h2>
-        <p>GitOpsの考え方、継続的な収束、構成要素、同期戦略、実運用の注意点。</p>
-        <time datetime="2026-06-11">2026-06-11</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-11-modern-web-guidance/" data-kind="note" data-title="Modern Web Guidanceとは？" data-category="ai-development" data-keywords="modern web guidance google chrome codex skill css javascript baseline accessibility performance ai coding agent">
-        <span class="kind">解説ノート</span>
-        <span class="tag">AI開発</span>
-        <h2>Modern Web Guidanceとは？</h2>
-        <p>AIが古いWeb実装を選ぶ問題と、Google公式スキルによる改善方法。</p>
-        <time datetime="2026-06-11">2026-06-11</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-10-oauth2-guide/" data-kind="note" data-title="OAuth 2.0を詳しく理解する" data-category="security" data-keywords="oauth oauth2 authorization code pkce access token refresh token scope oidc openid connect security">
-        <span class="kind">解説ノート</span>
-        <span class="tag">セキュリティ</span>
-        <h2>OAuth 2.0を詳しく理解する</h2>
-        <p>権限委譲の目的、登場人物、推奨フロー、トークン、安全な実装を図解。</p>
-        <time datetime="2026-06-10">2026-06-10</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-08-bearer-token/" data-kind="note" data-title="Bearerトークンって何？" data-category="security" data-keywords="bearer token oauth access token jwt authorization api security">
-        <span class="kind">解説ノート</span>
-        <span class="tag">セキュリティ</span>
-        <h2>Bearerトークンって何？</h2>
-        <p>「持っている人が使える」トークンの仕組みと、安全に扱うための注意点。</p>
-        <time datetime="2026-06-08">2026-06-08</time>
-      </a>
-      <a class="note-card" href="notes/2026-06-08-codex-note-workflow/" data-kind="note" data-title="Codex Appで知識インデックスを育てる" data-category="workflow" data-keywords="codex html github pages knowledge notes index source url workflow">
-        <span class="kind">解説ノート</span>
-        <span class="tag">ワークフロー</span>
-        <h2>Codex Appで知識インデックスを育てる</h2>
-        <p>URL資料は一覧へ、疑問は解説ノートへ分けて蓄積する最小運用。</p>
-        <time datetime="2026-06-08">2026-06-08</time>
-      </a>
-    </section>
+    <section class="note-grid" id="notes" aria-label="知識インデックス"></section>
     <p class="empty" id="empty">該当する項目はありません。</p>
   </main>
 
   <footer class="page-shell footer">Review before publishing. Do not store secrets.</footer>
-
-  <script>
-    const search = document.querySelector("#search");
-    const kind = document.querySelector("#kind");
-    const category = document.querySelector("#category");
-    const cards = [...document.querySelectorAll(".note-card")];
-    const monthHeadings = [...document.querySelectorAll(".month-heading")];
-    const empty = document.querySelector("#empty");
-
-    function filterNotes() {
-      const query = search.value.trim().toLowerCase();
-      let visible = 0;
-      cards.forEach((card) => {
-        const text = `${card.dataset.title} ${card.dataset.keywords} ${card.dataset.source || ""}`.toLowerCase();
-        const matches =
-          text.includes(query) &&
-          (!kind.value || card.dataset.kind === kind.value) &&
-          (!category.value || card.dataset.category === category.value);
-        card.hidden = !matches;
-        if (matches) visible += 1;
-      });
-      monthHeadings.forEach((heading) => {
-        const nextCards = [];
-        let node = heading.nextElementSibling;
-        while (node && !node.classList.contains("month-heading")) {
-          if (node.classList.contains("note-card")) nextCards.push(node);
-          node = node.nextElementSibling;
-        }
-        heading.hidden = !nextCards.some((card) => !card.hidden);
-      });
-      empty.style.display = visible ? "none" : "block";
-    }
-
-    search.addEventListener("input", filterNotes);
-    kind.addEventListener("change", filterNotes);
-    category.addEventListener("change", filterNotes);
-  </script>
 </body>
 </html>
