@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="git switchとgit restoreを、checkoutやresetとの違いを含めて実務向けに整理">
+  <title>最近のGitコマンド: switch / restoreで何が変わったのか | Technical Notes</title>
+  <link rel="stylesheet" href="../../styles/site.css">
+</head>
+<body>
+  <main class="page-shell article">
+    <nav><a href="../../">← ノート一覧へ</a></nav>
+    <p class="eyebrow">Workflow · 2026-07-03</p>
+    <h1>最近のGitコマンド: switch / restoreで何が変わったのか</h1>
+    <p class="lead"><code>git checkout</code>は「ブランチを切り替える」と「ファイルを戻す」の両方を担当していました。最近のGitでは、その曖昧さを避けるために<code>switch</code>と<code>restore</code>を使い分けると読みやすくなります。</p>
+
+    <div class="callout">
+      <strong>30秒でわかる答え</strong>
+      <p>ブランチを移動するなら<code>git switch</code>、ファイルの変更を戻すなら<code>git restore</code>、履歴やステージの位置を動かすなら<code>git reset</code>と考えると整理できます。<code>checkout</code>は今も使えますが、役割が広く、操作意図が読み取りにくい場面があります。</p>
+    </div>
+
+    <h2>なぜcheckoutから分かれたのか</h2>
+    <p><code>git checkout</code>は歴史的に、ブランチ切り替えとファイル復元の両方を持つコマンドです。公式ドキュメントでも、<code>checkout</code>には「branchを切り替える」モードと「別バージョンのファイルを復元する」モードがあると説明されています。</p>
+    <p>この2つは日常操作としてはまったく違います。そこで、Git 2.23で<code>switch</code>と<code>restore</code>が追加され、操作の意図をコマンド名で分けられるようになりました。</p>
+
+    <figure class="architecture-figure" aria-label="Gitコマンドの役割分担">
+      <svg viewBox="0 0 980 560" role="img" aria-labelledby="git-commands-title git-commands-desc">
+        <title id="git-commands-title">switch、restore、reset、checkoutの役割分担</title>
+        <desc id="git-commands-desc">switchはブランチを切り替え、restoreは作業ツリーやステージのファイルを戻し、resetはHEADやindexを既知の状態に戻す。checkoutはswitchとrestoreの領域をまたぐ。</desc>
+        <defs>
+          <marker id="arrowhead-git" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+            <polygon points="0 0, 10 4, 0 8" fill="#5f625d"></polygon>
+          </marker>
+        </defs>
+
+        <text x="490" y="34" text-anchor="middle" font-size="22" font-weight="800">Gitの状態を3つに分けて見る</text>
+
+        <rect x="76" y="96" width="210" height="100" rx="16" class="node ai"></rect>
+        <text x="181" y="134" text-anchor="middle" font-size="18" font-weight="800">HEAD</text>
+        <text x="181" y="160" text-anchor="middle" font-size="13">今見ているcommit</text>
+        <text x="181" y="182" text-anchor="middle" font-size="13">またはbranchの先端</text>
+
+        <rect x="386" y="96" width="210" height="100" rx="16" class="node search"></rect>
+        <text x="491" y="134" text-anchor="middle" font-size="18" font-weight="800">Index</text>
+        <text x="491" y="160" text-anchor="middle" font-size="13">ステージ済み</text>
+        <text x="491" y="182" text-anchor="middle" font-size="13">次のcommit候補</text>
+
+        <rect x="696" y="96" width="210" height="100" rx="16" class="node control"></rect>
+        <text x="801" y="134" text-anchor="middle" font-size="18" font-weight="800">Working tree</text>
+        <text x="801" y="160" text-anchor="middle" font-size="13">手元のファイル</text>
+        <text x="801" y="182" text-anchor="middle" font-size="13">未ステージ変更</text>
+
+        <path d="M286 146 L380 146" class="arrow" marker-end="url(#arrowhead-git)"></path>
+        <path d="M596 146 L690 146" class="arrow" marker-end="url(#arrowhead-git)"></path>
+        <text x="333" y="130" text-anchor="middle" font-size="12">add前後</text>
+        <text x="643" y="130" text-anchor="middle" font-size="12">編集</text>
+
+        <rect x="84" y="292" width="250" height="92" rx="16" class="node api"></rect>
+        <text x="209" y="326" text-anchor="middle" font-size="18" font-weight="800">git switch</text>
+        <text x="209" y="352" text-anchor="middle" font-size="13">HEADが見るbranchを変える</text>
+
+        <rect x="365" y="292" width="250" height="92" rx="16" class="node ops"></rect>
+        <text x="490" y="326" text-anchor="middle" font-size="18" font-weight="800">git restore</text>
+        <text x="490" y="352" text-anchor="middle" font-size="13">Index / Working treeのファイルを戻す</text>
+
+        <rect x="646" y="292" width="250" height="92" rx="16" class="node"></rect>
+        <text x="771" y="326" text-anchor="middle" font-size="18" font-weight="800">git reset</text>
+        <text x="771" y="352" text-anchor="middle" font-size="13">HEADやIndexを既知の状態へ戻す</text>
+
+        <path d="M209 292 C190 248 180 224 180 200" class="arrow dashed" marker-end="url(#arrowhead-git)"></path>
+        <path d="M490 292 C490 248 490 224 490 200" class="arrow dashed" marker-end="url(#arrowhead-git)"></path>
+        <path d="M490 292 C640 250 756 230 798 200" class="arrow dashed" marker-end="url(#arrowhead-git)"></path>
+        <path d="M771 292 C724 234 610 206 494 196" class="arrow dashed" marker-end="url(#arrowhead-git)"></path>
+        <path d="M771 292 C640 234 330 208 184 196" class="arrow dashed" marker-end="url(#arrowhead-git)"></path>
+
+        <rect x="166" y="430" width="648" height="74" rx="16" fill="#fffdf8" stroke="#ddd8cc" stroke-width="2"></rect>
+        <text x="490" y="460" text-anchor="middle" font-size="17" font-weight="800">git checkout</text>
+        <text x="490" y="484" text-anchor="middle" font-size="13">switchとrestoreの領域をまたぐ。今も有効だが、意図が曖昧になりやすい。</text>
+      </svg>
+      <figcaption class="figure-caption">日常操作では、ブランチ移動は<code>switch</code>、ファイル復元は<code>restore</code>と分けると、コマンドの意図が読みやすくなります。</figcaption>
+    </figure>
+
+    <h2>よく使う操作の対応表</h2>
+    <table>
+      <thead><tr><th>やりたいこと</th><th>最近の書き方</th><th>checkout時代の書き方</th></tr></thead>
+      <tbody>
+        <tr><td>既存ブランチへ移動する</td><td><code>git switch feature/foo</code></td><td><code>git checkout feature/foo</code></td></tr>
+        <tr><td>直前のブランチへ戻る</td><td><code>git switch -</code></td><td><code>git checkout -</code></td></tr>
+        <tr><td>新しいブランチを作って移動する</td><td><code>git switch -c feature/foo</code></td><td><code>git checkout -b feature/foo</code></td></tr>
+        <tr><td>特定commitを一時的に見る</td><td><code>git switch --detach &lt;commit&gt;</code></td><td><code>git checkout &lt;commit&gt;</code></td></tr>
+        <tr><td>未ステージの変更を捨てる</td><td><code>git restore path/to/file</code></td><td><code>git checkout -- path/to/file</code></td></tr>
+        <tr><td>ステージから外す</td><td><code>git restore --staged path/to/file</code></td><td><code>git reset path/to/file</code></td></tr>
+        <tr><td>特定commitの内容でファイルを戻す</td><td><code>git restore --source=&lt;commit&gt; path/to/file</code></td><td><code>git checkout &lt;commit&gt; -- path/to/file</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>switchはブランチ操作</h2>
+    <p><code>git switch</code>は、指定したブランチへ移動するためのコマンドです。作業ツリーとindexは、移動先ブランチに合わせて更新されます。ただし、ローカル変更が失われる可能性がある場合は、通常は操作が中断されます。</p>
+
+    <pre><code># 既存ブランチへ移動
+git switch main
+
+# 新しいブランチを作って移動
+git switch -c feature/login
+
+# 直前のブランチへ戻る
+git switch -
+
+# commitを一時的に見る detached HEAD
+git switch --detach HEAD~3</code></pre>
+
+    <p>新規ブランチ作成では<code>-c</code>を使います。既存ブランチを同名で作り直す<code>-C</code>もありますが、既存branchの位置を動かすため、普段使いでは慎重に扱います。</p>
+
+    <h2>restoreはファイルを戻す操作</h2>
+    <p><code>git restore</code>は、指定したパスを復元するためのコマンドです。何を復元元にするか、どこを復元先にするかで意味が変わります。</p>
+
+    <table>
+      <thead><tr><th>コマンド</th><th>復元先</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td><code>git restore file</code></td><td>Working tree</td><td>未ステージの変更をindexの内容へ戻す。手元の編集を捨てる。</td></tr>
+        <tr><td><code>git restore --staged file</code></td><td>Index</td><td>ステージ済みの内容をHEADへ戻す。作業ツリーの変更は残る。</td></tr>
+        <tr><td><code>git restore --staged --worktree file</code></td><td>Index + Working tree</td><td>ステージと作業ツリーの両方を戻す。</td></tr>
+        <tr><td><code>git restore --source=HEAD~1 file</code></td><td>Working tree</td><td>指定commitの内容で作業ツリーのファイルを戻す。</td></tr>
+        <tr><td><code>git restore -p file</code></td><td>選択したhunk</td><td>差分の一部だけを対話的に戻す。</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>restoreの注意</strong>
+      <p><code>git restore file</code>は、未ステージの手元変更を捨てます。戻したいだけなのか、退避したいのかが曖昧なときは、先に<code>git diff</code>や<code>git status</code>で確認します。</p>
+    </div>
+
+    <h2>resetとの違い</h2>
+    <p><code>git reset</code>は、<code>HEAD</code>やindexを既知の状態に戻すコマンドです。ファイル単位でステージから外す目的にも使われてきましたが、現在は「ステージから外す」だけなら<code>git restore --staged</code>の方が意図を読み取りやすいです。</p>
+
+    <table>
+      <thead><tr><th>目的</th><th>おすすめ</th><th>補足</th></tr></thead>
+      <tbody>
+        <tr><td>ステージから外す</td><td><code>git restore --staged file</code></td><td>作業ツリーの変更は残る。</td></tr>
+        <tr><td>直前commitをやり直す</td><td><code>git reset --soft HEAD~1</code></td><td>HEADだけ戻し、indexと作業ツリーは残す。</td></tr>
+        <tr><td>commitもステージも戻す</td><td><code>git reset --mixed HEAD~1</code></td><td><code>--mixed</code>はresetの既定。</td></tr>
+        <tr><td>すべて捨てて戻す</td><td><code>git reset --hard &lt;commit&gt;</code></td><td>作業ツリーも上書きするため危険。</td></tr>
+      </tbody>
+    </table>
+
+    <h2>実務での使い分け</h2>
+    <ul>
+      <li>ブランチを移動するなら<code>git switch</code>を使う。</li>
+      <li>ブランチを作って移動するなら<code>git switch -c</code>を使う。</li>
+      <li>ファイルの未ステージ変更を捨てるなら<code>git restore</code>を使う。</li>
+      <li>ステージから外すだけなら<code>git restore --staged</code>を使う。</li>
+      <li>履歴の位置を動かすなら<code>git reset</code>を使う。</li>
+      <li>古い記事や既存スクリプトの<code>checkout</code>は無理に置き換えなくてよいが、新しく書く手順書では<code>switch</code> / <code>restore</code>を優先する。</li>
+    </ul>
+
+    <h2>覚え方</h2>
+    <div class="diagram">
+      <div><code>switch</code><br>ブランチを選ぶ</div>
+      <div><code>restore</code><br>ファイルを戻す</div>
+      <div><code>reset</code><br>状態の基準を戻す</div>
+    </div>
+
+    <p><code>checkout</code>は「昔からある万能寄りの道具」です。悪いコマンドではありませんが、チームの手順書やレビューコメントでは、目的が伝わる<code>switch</code>と<code>restore</code>を使う方が読み手に親切です。</p>
+
+    <h2>参照元</h2>
+    <ul>
+      <li><a href="https://git-scm.com/docs/git-switch">git-switch Documentation</a> — Git、確認日: 2026-07-03</li>
+      <li><a href="https://git-scm.com/docs/git-restore">git-restore Documentation</a> — Git、確認日: 2026-07-03</li>
+      <li><a href="https://git-scm.com/docs/git-checkout">git-checkout Documentation</a> — Git、確認日: 2026-07-03</li>
+      <li><a href="https://git-scm.com/docs/git-reset">git-reset Documentation</a> — Git、確認日: 2026-07-03</li>
+    </ul>
+  </main>
+</body>
+</html>

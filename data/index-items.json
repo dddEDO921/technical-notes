@@ -1,6 +1,16 @@
 [
   {
     "kind": "note",
+    "href": "notes/2026-07-03-modern-git-switch-restore/",
+    "title": "最近のGitコマンド: switch / restoreで何が変わったのか",
+    "category": "workflow",
+    "categoryLabel": "ワークフロー",
+    "summary": "checkoutの役割をswitchとrestoreに分け、resetとの違いも含めて実務の使い分けを整理。",
+    "date": "2026-07-03",
+    "keywords": "git switch restore checkout reset branch working tree index staged unstaged detached head command workflow"
+  },
+  {
+    "kind": "note",
     "href": "notes/2026-07-02-kubernetes-pod-lifecycle/",
     "title": "Kubernetes Podライフサイクルを実務目線で理解する",
     "category": "infrastructure",
